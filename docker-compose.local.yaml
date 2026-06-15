@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # 本地测试用 MySQL（生产环境请替换为独立实例）
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: dtm
+    ports:
+      - "3306:3306"
+    volumes:
+      - ../mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  dtm:
+    build:
+      context: ./dtm
+      dockerfile: Dockerfile.dtm
+    ports:
+      - "36789:36789"
+      - "36790:36790"
+    environment:
+      STORE: MYSQL
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root123
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      DTM_URL: http://dtm:36789
+      DB_DSN: root:root123@tcp(mysql:3306)/order_db?parseTime=true
+    depends_on:
+      - dtm
+    restart: unless-stopped
+
+  stock-service:
+    build:
+      context: ./stock-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      DTM_URL: http://dtm:36789
+      DB_DSN: root:root123@tcp(mysql:3306)/stock_db?parseTime=true
+    depends_on:
+      - dtm
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
