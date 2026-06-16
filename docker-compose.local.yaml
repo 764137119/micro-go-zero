@@ -1,6 +1,17 @@
 version: '3.8'
 
 services:
+  # 服务注册中心
+  etcd:
+    image: bitnami/etcd:3.5
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    restart: unless-stopped
+
   # 本地测试用 MySQL（生产环境请替换为独立实例）
   mysql:
     image: mysql:8.0
@@ -35,6 +46,28 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  user-rpc:
+    build:
+      context: ./rpc/user-rpc
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - etcd
+    restart: unless-stopped
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    environment:
+      ETCD_ENDPOINTS: http://etcd:2379
+    depends_on:
+      - etcd
+    restart: unless-stopped
+
   order-service:
     build:
       context: ./order-service
@@ -44,8 +77,10 @@ services:
     environment:
       DTM_URL: http://dtm:36789
       DB_DSN: root:root123@tcp(mysql:3306)/order_db?parseTime=true
+      ETCD_ENDPOINTS: http://etcd:2379
     depends_on:
       - dtm
+      - etcd
     restart: unless-stopped
 
   stock-service:
@@ -57,8 +92,10 @@ services:
     environment:
       DTM_URL: http://dtm:36789
       DB_DSN: root:root123@tcp(mysql:3306)/stock_db?parseTime=true
+      ETCD_ENDPOINTS: http://etcd:2379
     depends_on:
       - dtm
+      - etcd
     restart: unless-stopped
 
 volumes:

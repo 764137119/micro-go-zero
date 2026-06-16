@@ -3,18 +3,18 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o user-service .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o user-rpc .
 
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates tzdata
 WORKDIR /root/
 
-COPY --from=builder /app/user-service .
-COPY --from=builder /app/etc/userservice.yaml ./etc/userservice.yaml
+COPY --from=builder /app/user-rpc .
+COPY --from=builder /app/etc/user.yaml ./etc/user.yaml
 
-EXPOSE 8888
+EXPOSE 8080
 
 ENV TZ=Asia/Shanghai
 RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-CMD ["./user-service", "-f", "etc/userservice.yaml"]
+CMD ["./user-rpc", "-f", "etc/user.yaml"]

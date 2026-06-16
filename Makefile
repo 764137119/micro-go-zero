@@ -43,3 +43,21 @@ commit:
 		input_msg="$(msg)"; \
 	fi; \
 	git add . && git commit -m "$$input_msg" && git push 
+
+# 项目根目录的 Makefile
+
+# 构建所有服务
+build-all: user-service order-service stock-service
+
+# 构建 user-service
+user-service:
+	@cd user-service && docker build -t user-service:latest .
+
+# 构建 order-service
+order-service:
+	@cd order-service && docker build -t order-service:latest .
+
+# 构建 stock-service
+stock-service:
+	@cd stock-service && docker build -t stock-service:latest .
+
