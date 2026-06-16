@@ -5,11 +5,7 @@ dtm+go-zero
 
 ## 当前架构总结
 
-```
-客户端请求 → api-gateway (Gin, :8888) → RPC 服务 (user-rpc/order-rpc) → 业务逻辑
-                      ↓
-              通过 etcd 服务发现
-```
+![当前架构图](static/image/tongyi-mermaid-2026-06-16-175237.png)
 
 ## 新功能开发流程
 
@@ -48,27 +44,11 @@ dtm+go-zero
 
 ### 二、整体架构
 
-```
-客户端
-  │
-  ▼
-api-gateway（编排层）
-  │  使用 dtmgrpc.NewSagaGrpc() 编排 Saga
-  │  Add(正向Action, 补偿Action, 请求参数)
-  │
-  ├──► stock-rpc（第1分支）
-  │     ├── 正向: DeductStock  (扣减库存)
-  │     └── 补偿: RollbackStock (回滚库存)
-  │
-  └──► order-rpc（第2分支）
-        ├── 正向: CreateOrder   (创建订单)
-        └── 补偿: CancelOrder   (取消订单)
-
-协调器: DTM (docker:36789 HTTP, 36790 gRPC)
-注册中心: etcd (2379)
-```
+![整体架构图](static/image/tongyi-mermaid-2026-06-16-175329.png)
 
 ### 三、核心流程（Saga 编排）
+
+![Saga 流程图](static/image/tongyi-mermaid-2026-06-16-175339.png)
 
 代码位于 `api-gateway/handler/order_handler.go:CreateOrder`：
 
@@ -133,54 +113,4 @@ api-gateway（编排层）
 5. **验证 DTM 回调网络可达性**
 6. **补充 OrderCommitPay / OrderStateCheck** 完整逻辑
 
----
 
-
-flowchart TD
-    A[Saga 数据安全] --> B[幂等性]
-    A --> C[持久化日志]
-    A --> D[隔离性兜底]
-    A --> E[补偿可靠性]
-    
-    B --> B1[全局事务ID去重]
-    B --> B2[补偿状态标记]
-    
-    C --> C1[WAL写入原则]
-    C --> C2[协调者故障恢复]
-    
-    D --> D1[状态机/语义锁]
-    D --> D2[乐观锁版本号]
-    D --> D3[操作步骤合并]
-    
-    E --> E1[无限重试+退避]
-    E --> E2[死信队列+人工兜底]
-    E --> E3[补偿本地事务化]
-
-
-
-
-
-sequenceDiagram
-    participant Client as 用户
-    participant Order as order-service<br/>(order-db)
-    participant Stock as stock-service<br/>(stock-db)
-    participant TC as 事务协调器
-
-    Client->>Order: 创建订单
-    Order->>TC: 开启全局事务
-    TC-->>Order: xid
-    
-    Note over Order: 本地事务:<br/>INSERT t_order(status=待支付)
-    
-    Order->>Stock: Try: 预占库存(xid)
-    Note over Stock: 本地事务:<br/>UPDATE t_stock SET available=available-N<br/>INSERT t_stock_occupy(xid, qty)
-    Stock-->>Order: 预占成功
-    
-    Order->>TC: 注册分支事务
-    Order-->>Client: 下单成功(待支付)
-    
-    Note over Client: 用户支付...
-    Client->>Order: 支付回调
-    Order->>TC: 提交全局事务
-    TC->>Stock: Confirm: 确认扣减(xid)
-    Note over Stock: 本地事务:<br/>DELETE t_stock_occupy WHERE xid=?<br/>(库存已在Try时扣过,此处仅清理预占记录)
