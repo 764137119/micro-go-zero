@@ -43,6 +43,9 @@ message CreateOrderReq {
   int64 orderEndTime = 6;
   int64 skuId = 7;           // 商品 SKU ID（用于 Saga 扣减库存）
   int64 quantity = 8;        // 商品数量（用于 Saga 扣减库存）
+  string gid = 9;              // DTM 全局事务 ID（用于幂等去重 + 子事务屏障）
+  string transType = 10;       // DTM 事务类型，固定为 "saga"
+
 }
 
 // 创建订单响应
@@ -55,6 +58,9 @@ message CancelOrderReq {
   int64 OrderId = 1;
   int64 skuId = 2;           // 商品 SKU ID（用于 Saga 回滚库存）
   int64 quantity = 3;        // 商品数量（用于 Saga 回滚库存）
+  string gid = 4;              // DTM 全局事务 ID
+  string transType = 5;        // DTM 事务类型，固定为 "saga"
+
 }
 
 // 取消订单响应

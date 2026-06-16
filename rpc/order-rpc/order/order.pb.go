@@ -287,8 +287,10 @@ type CreateOrderReq struct {
 	OrderDes       string                 `protobuf:"bytes,4,opt,name=orderDes,proto3" json:"orderDes,omitempty"`
 	OrderBeginTime int64                  `protobuf:"varint,5,opt,name=orderBeginTime,proto3" json:"orderBeginTime,omitempty"`
 	OrderEndTime   int64                  `protobuf:"varint,6,opt,name=orderEndTime,proto3" json:"orderEndTime,omitempty"`
-	SkuId          int64                  `protobuf:"varint,7,opt,name=skuId,proto3" json:"skuId,omitempty"`       // 商品 SKU ID（用于 Saga 扣减库存）
-	Quantity       int64                  `protobuf:"varint,8,opt,name=quantity,proto3" json:"quantity,omitempty"` // 商品数量（用于 Saga 扣减库存）
+	SkuId          int64                  `protobuf:"varint,7,opt,name=skuId,proto3" json:"skuId,omitempty"`         // 商品 SKU ID（用于 Saga 扣减库存）
+	Quantity       int64                  `protobuf:"varint,8,opt,name=quantity,proto3" json:"quantity,omitempty"`   // 商品数量（用于 Saga 扣减库存）
+	Gid            string                 `protobuf:"bytes,9,opt,name=gid,proto3" json:"gid,omitempty"`              // DTM 全局事务 ID（用于幂等去重 + 子事务屏障）
+	TransType      string                 `protobuf:"bytes,10,opt,name=transType,proto3" json:"transType,omitempty"` // DTM 事务类型，固定为 "saga"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -379,6 +381,20 @@ func (x *CreateOrderReq) GetQuantity() int64 {
 	return 0
 }
 
+func (x *CreateOrderReq) GetGid() string {
+	if x != nil {
+		return x.Gid
+	}
+	return ""
+}
+
+func (x *CreateOrderReq) GetTransType() string {
+	if x != nil {
+		return x.TransType
+	}
+	return ""
+}
+
 // 创建订单响应
 type CreateOrderRsp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -428,8 +444,10 @@ func (x *CreateOrderRsp) GetOrderId() int64 {
 type CancelOrderReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderId       int64                  `protobuf:"varint,1,opt,name=OrderId,proto3" json:"OrderId,omitempty"`
-	SkuId         int64                  `protobuf:"varint,2,opt,name=skuId,proto3" json:"skuId,omitempty"`       // 商品 SKU ID（用于 Saga 回滚库存）
-	Quantity      int64                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"` // 商品数量（用于 Saga 回滚库存）
+	SkuId         int64                  `protobuf:"varint,2,opt,name=skuId,proto3" json:"skuId,omitempty"`        // 商品 SKU ID（用于 Saga 回滚库存）
+	Quantity      int64                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`  // 商品数量（用于 Saga 回滚库存）
+	Gid           string                 `protobuf:"bytes,4,opt,name=gid,proto3" json:"gid,omitempty"`             // DTM 全局事务 ID
+	TransType     string                 `protobuf:"bytes,5,opt,name=transType,proto3" json:"transType,omitempty"` // DTM 事务类型，固定为 "saga"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -483,6 +501,20 @@ func (x *CancelOrderReq) GetQuantity() int64 {
 		return x.Quantity
 	}
 	return 0
+}
+
+func (x *CancelOrderReq) GetGid() string {
+	if x != nil {
+		return x.Gid
+	}
+	return ""
+}
+
+func (x *CancelOrderReq) GetTransType() string {
+	if x != nil {
+		return x.TransType
+	}
+	return ""
 }
 
 // 取消订单响应
@@ -552,7 +584,7 @@ const file_order_proto_rawDesc = "" +
 	"orderState\x18\x02 \x01(\x05R\n" +
 	"orderState\"K\n" +
 	"\x13OrderStateCheckResp\x124\n" +
-	"\vorderCommon\x18\x01 \x01(\v2\x12.order.OrderCommonR\vorderCommon\"\xfc\x01\n" +
+	"\vorderCommon\x18\x01 \x01(\v2\x12.order.OrderCommonR\vorderCommon\"\xac\x02\n" +
 	"\x0eCreateOrderReq\x12\x16\n" +
 	"\x06userId\x18\x01 \x01(\x03R\x06userId\x12\x18\n" +
 	"\aorderNo\x18\x02 \x01(\tR\aorderNo\x12\x1e\n" +
@@ -563,13 +595,18 @@ const file_order_proto_rawDesc = "" +
 	"\x0eorderBeginTime\x18\x05 \x01(\x03R\x0eorderBeginTime\x12\"\n" +
 	"\forderEndTime\x18\x06 \x01(\x03R\forderEndTime\x12\x14\n" +
 	"\x05skuId\x18\a \x01(\x03R\x05skuId\x12\x1a\n" +
-	"\bquantity\x18\b \x01(\x03R\bquantity\"*\n" +
+	"\bquantity\x18\b \x01(\x03R\bquantity\x12\x10\n" +
+	"\x03gid\x18\t \x01(\tR\x03gid\x12\x1c\n" +
+	"\ttransType\x18\n" +
+	" \x01(\tR\ttransType\"*\n" +
 	"\x0eCreateOrderRsp\x12\x18\n" +
-	"\aorderId\x18\x01 \x01(\x03R\aorderId\"\\\n" +
+	"\aorderId\x18\x01 \x01(\x03R\aorderId\"\x8c\x01\n" +
 	"\x0eCancelOrderReq\x12\x18\n" +
 	"\aOrderId\x18\x01 \x01(\x03R\aOrderId\x12\x14\n" +
 	"\x05skuId\x18\x02 \x01(\x03R\x05skuId\x12\x1a\n" +
-	"\bquantity\x18\x03 \x01(\x03R\bquantity\"*\n" +
+	"\bquantity\x18\x03 \x01(\x03R\bquantity\x12\x10\n" +
+	"\x03gid\x18\x04 \x01(\tR\x03gid\x12\x1c\n" +
+	"\ttransType\x18\x05 \x01(\tR\ttransType\"*\n" +
 	"\x0eCancelOrderRsp\x12\x18\n" +
 	"\aOrderId\x18\x01 \x01(\x03R\aOrderId2\x92\x02\n" +
 	"\x05Order\x12E\n" +

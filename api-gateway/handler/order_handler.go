@@ -75,6 +75,8 @@ func CreateOrder(svcCtx *svc.ServiceContext) gin.HandlerFunc {
 						OrderEndTime:   req.OrderEndTime,
 						SkuId:          req.SkuId,
 						Quantity:       req.Quantity,
+						Gid:            gid,
+						TransType:      "saga",
 					},
 				)
 
