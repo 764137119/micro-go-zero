@@ -1,0 +1,126 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "./user";
+
+// 登录请求
+message LoginReq {
+  string mobile = 1;
+  string password = 2;
+}
+
+// 登录响应
+message LoginResp {
+  string accessToken = 1;
+  int64 accessExpire = 2;
+  int64 refreshAfter = 3;
+  int64 userId = 4;
+}
+
+// 登出请求
+message LogoutReq {
+  int64 userId = 1;
+}
+
+// 登出响应
+message LogoutResp {
+  bool ok = 1;
+}
+
+// 创建/更新用户请求
+message CreateOrUpdateUserReq {
+  int64 userId = 1;
+  string mobile = 2;
+  string nickName = 3;
+  int32 sex = 4;
+  string avatar = 5;
+  string password = 6;
+  string email = 7;
+}
+
+// 创建/更新用户响应
+message CreateOrUpdateUserResp {
+  int64 userId = 1;
+}
+
+// 用户列表请求
+message UserListReq {
+  int32 page = 1;
+  int32 pageSize = 2;
+  string mobile = 3;
+  string nickName = 4;
+}
+
+// 用户列表响应
+message UserListResp {
+  repeated UserInfoRsp list = 1;
+  int64 total = 2;
+}
+
+// 用户查询请求
+message UserInfoReq {
+  int64 userId = 1;
+}
+
+// 用户信息
+message UserInfoRsp {
+  int64 userId = 1;
+  string mobile = 2;
+  string nickName = 3;
+  int32 sex = 4;
+  string avatar = 5;
+  string email = 6;
+  int64 createdAt = 7;
+  int64 updatedAt = 8;
+}
+
+// 微信小程序登录请求
+message WxMiniProgramLoginReq {
+  string code = 1;
+  string nickName = 2;
+  string avatar = 3;
+  int32 sex = 4;
+}
+
+// 微信小程序登录响应
+message WxMiniProgramLoginResp {
+  string accessToken = 1;
+  int64 accessExpire = 2;
+  int64 refreshAfter = 3;
+  int64 userId = 4;
+  string sessionKey = 5;
+  string openId = 6;
+}
+
+// 刷新token请求
+message RefreshTokenReq {
+  string refreshToken = 1;
+}
+
+// 刷新token响应
+message RefreshTokenResp {
+  string accessToken = 1;
+  int64 accessExpire = 2;
+  int64 refreshAfter = 3;
+}
+
+// 用户服务
+service User {
+  // 用户登录
+  rpc Login(LoginReq) returns (LoginResp);
+  // 用户登出
+  rpc Logout(LogoutReq) returns (LogoutResp);
+  // 创建用户
+  rpc CreateUser(CreateOrUpdateUserReq) returns (CreateOrUpdateUserResp);
+  // 更新用户信息
+  rpc UpdateUser(CreateOrUpdateUserReq) returns (CreateOrUpdateUserResp);
+  // 微信小程序登录
+  rpc WxMiniProgramLogin(WxMiniProgramLoginReq) returns (WxMiniProgramLoginResp);
+  // 刷新token
+  rpc RefreshToken(RefreshTokenReq) returns (RefreshTokenResp);
+  // 用户列表
+  rpc UserList(UserListReq) returns (UserListResp);
+  // 用户详情查询
+  rpc UserInfo(UserInfoReq) returns (UserInfoRsp);
+}

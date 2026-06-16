@@ -1,0 +1,59 @@
+type (
+    orderCommon{
+        orderId int64 `json:"orderId"`
+        orderNo string `json:"orderNo"`
+        orderState int `json:"orderState"`
+    }
+	orderCommitPayReq {
+		orderId int64 `json:"orderId"` 
+        payId int64 `json:"payId"`
+	}
+	
+	orderCommitPayResp {
+		ok bool `json:"ok"`
+	}
+
+	orderStateCheckReq {
+        orderId int64 `json:"orderId"`
+		orderState int `json:"orderState"`
+	}
+	
+	orderStateCheckResp {
+		orderCommon
+	}
+
+    createOrderReq{
+        userId int64 `json:"userId"`
+        orderNo string `json:"orderNo"`
+        orderPrice int64 `json:"orderPrice"`
+        orderDes string `json:"porderDes"`
+        orderBeginTime *time.Time `json:"orderbeginTime"`
+        orderEndTime *time.Time `json:"orderEndTime"`
+    }
+    createOrderRsp{
+        orderId int64 `json:"orderId"`
+    }
+
+    cancelOrderReq{
+        OrderId int64 `json:"orderId"`
+    }
+    cancelOrderRsp{
+        OrderId int64 `json:"orderId"`
+    }
+)
+
+service order-service-api {
+    //订单支付提交
+	@handler OrderCommitPayHandler
+	post /OrderCommitPay (orderCommitPayReq) returns (orderCommitPayResp)
+	
+    //订单状态检测
+	@handler OrderStateCheckHandler
+	get /OrderStatecheck (orderStateCheckReq) returns (orderStateCheckResp)
+    //创建订单
+    @handler CreateOrderHandler
+    post CreateOrder(createOrderReq)returns(createOrderRsp)
+    //取消订单
+    @handler CancelOrderHandler
+    post CancelOrder()
+}

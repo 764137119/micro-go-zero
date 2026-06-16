@@ -1,0 +1,134 @@
+info (
+	title:   "用户服务"
+	desc:    "用户创建 登陆，登出 列表 查询"
+	author:  "wangyingwen"
+	email:   "@xiaoheiban.cn"
+	version: "1.0"
+)
+
+//用户画像。微信小程序
+type (
+	// 登录请求
+	LoginReq {
+		mobile   string `json:"mobile"`
+		password string `json:"password"`
+	}
+	LoginResp {
+		accessToken  string `json:"accessToken"`
+		accessExpire int64  `json:"accessExpire"`
+		refreshAfter int64  `json:"refreshAfter"`
+		userId       int64  `json:"userId"`
+	}
+	// 登出请求
+	LogoutReq {
+		userId int64 `json:"userId"`
+	}
+	LogoutResp {
+		ok bool `json:"ok"`
+	}
+	// 创建用户请求
+	CreateOrUpdateUserReq {
+		userId   int64  `json:"userId,optional"`
+		mobile   string `json:"mobile"`
+		nickName string `json:"nickName"`
+		sex      int    `json:"sex,options=0|1|2"`
+		avatar   string `json:"avatar,optional"`
+		password string `json:"password"`
+		email    string `json:"email,optional"`
+	}
+	CreateOrUpdateUserResp {
+		userId int64 `json:"userId"`
+	}
+	// 用户列表请求
+	UserListReq {
+		page     int    `json:"page,default=1"`
+		pageSize int    `json:"pageSize,default=10"`
+		mobile   string `json:"mobile,optional"`
+		nickName string `json:"nickName,optional"`
+	}
+	UserListResp {
+		list  []UserInfo `json:"list"`
+		total int        `json:"total"`
+	}
+	// 用户查询请求
+	UserInfoReq {
+		userId int64 `json:"userId"`
+	}
+	// 用户信息
+	UserInfo {
+		userId    int64  `json:"userId"`
+		mobile    string `json:"mobile"`
+		nickName  string `json:"nickName"`
+		sex       int    `json:"sex"`
+		avatar    string `json:"avatar"`
+		email     string `json:"email"`
+		createdAt int64  `json:"createdAt"`
+		updatedAt int64  `json:"updatedAt"`
+	}
+	// 微信小程序登录/获取用户画像请求
+	WxMiniProgramLoginReq {
+		code     string `json:"code"`
+		nickName string `json:"nickName,optional"`
+		avatar   string `json:"avatar,optional"`
+		sex      int    `json:"sex,optional,options=0|1|2"`
+	}
+	WxMiniProgramLoginResp {
+		accessToken  string `json:"accessToken"`
+		accessExpire int64  `json:"accessExpire"`
+		refreshAfter int64  `json:"refreshAfter"`
+		userId       int64  `json:"userId"`
+		sessionKey   string `json:"sessionKey,optional"`
+		openId       string `json:"openId,optional"`
+	}
+	// 刷新token请求
+	RefreshTokenReq {
+		refreshToken string `json:"refreshToken"`
+	}
+	RefreshTokenResp {
+		accessToken  string `json:"accessToken"`
+		accessExpire int64  `json:"accessExpire"`
+		refreshAfter int64  `json:"refreshAfter"`
+	}
+)
+
+// 公开接口（无需认证）
+service user_service {
+	//用户登录
+	@handler LoginHandler
+	post /user/login (LoginReq) returns (LoginResp)
+
+	//用户登出
+	@handler LogoutHandler
+	post /user/logout (LogoutReq) returns (LogoutResp)
+
+	//创建用户
+	@handler CreateUserHandler
+	post /user/create (CreateOrUpdateUserReq) returns (CreateOrUpdateUserResp)
+
+	//更新用户信息
+	@handler UpdateUserHandler
+	put /user/update (CreateOrUpdateUserReq) returns (CreateOrUpdateUserResp)
+
+	//微信小程序登录/获取用户画像
+	@handler WxMiniProgramLoginHandler
+	post /user/wx/login (WxMiniProgramLoginReq) returns (WxMiniProgramLoginResp)
+
+	//刷新token
+	@handler RefreshTokenHandler
+	post /user/token/refresh (RefreshTokenReq) returns (RefreshTokenResp)
+}
+
+// 需认证接口
+@server (
+	middleware: AuthMiddleware
+)
+service user_service {
+	//用户列表
+	@handler UserListHandler
+	post /user/list (UserListReq) returns (UserListResp)
+
+	//用户详情查询
+	@handler UserInfoHandler
+	post /user/info (UserInfoReq) returns (UserInfo)
+}
+
