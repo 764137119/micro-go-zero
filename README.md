@@ -155,3 +155,32 @@ flowchart TD
     E --> E1[无限重试+退避]
     E --> E2[死信队列+人工兜底]
     E --> E3[补偿本地事务化]
+
+
+
+
+
+sequenceDiagram
+    participant Client as 用户
+    participant Order as order-service<br/>(order-db)
+    participant Stock as stock-service<br/>(stock-db)
+    participant TC as 事务协调器
+
+    Client->>Order: 创建订单
+    Order->>TC: 开启全局事务
+    TC-->>Order: xid
+    
+    Note over Order: 本地事务:<br/>INSERT t_order(status=待支付)
+    
+    Order->>Stock: Try: 预占库存(xid)
+    Note over Stock: 本地事务:<br/>UPDATE t_stock SET available=available-N<br/>INSERT t_stock_occupy(xid, qty)
+    Stock-->>Order: 预占成功
+    
+    Order->>TC: 注册分支事务
+    Order-->>Client: 下单成功(待支付)
+    
+    Note over Client: 用户支付...
+    Client->>Order: 支付回调
+    Order->>TC: 提交全局事务
+    TC->>Stock: Confirm: 确认扣减(xid)
+    Note over Stock: 本地事务:<br/>DELETE t_stock_occupy WHERE xid=?<br/>(库存已在Try时扣过,此处仅清理预占记录)
