@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "./order";
+
+// 订单公共字段
+message OrderCommon {
+  int64 orderId = 1;
+  string orderNo = 2;
+  int32 orderState = 3;
+}
+
+// 订单支付提交请求
+message OrderCommitPayReq {
+  int64 orderId = 1;
+  int64 payId = 2;
+}
+
+// 订单支付提交响应
+message OrderCommitPayResp {
+  bool ok = 1;
+}
+
+// 订单状态检测请求
+message OrderStateCheckReq {
+  int64 orderId = 1;
+  int32 orderState = 2;
+}
+
+// 订单状态检测响应
+message OrderStateCheckResp {
+  OrderCommon orderCommon = 1;
+}
+
+// 创建订单请求
+message CreateOrderReq {
+  int64 userId = 1;
+  string orderNo = 2;
+  int64 orderPrice = 3;
+  string orderDes = 4;
+  int64 orderBeginTime = 5;
+  int64 orderEndTime = 6;
+}
+
+// 创建订单响应
+message CreateOrderRsp {
+  int64 orderId = 1;
+}
+
+// 取消订单请求
+message CancelOrderReq {
+  int64 OrderId = 1;
+}
+
+// 取消订单响应
+message CancelOrderRsp {
+  int64 OrderId = 1;
+}
+
+// 订单服务
+service Order {
+  // 订单支付提交
+  rpc OrderCommitPay(OrderCommitPayReq) returns (OrderCommitPayResp);
+  // 订单状态检测
+  rpc OrderStateCheck(OrderStateCheckReq) returns (OrderStateCheckResp);
+  // 创建订单
+  rpc CreateOrder(CreateOrderReq) returns (CreateOrderRsp);
+  // 取消订单
+  rpc CancelOrder(CancelOrderReq) returns (CancelOrderRsp);
+}
