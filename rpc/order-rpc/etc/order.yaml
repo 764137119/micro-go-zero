@@ -14,3 +14,7 @@ StockRpc:
     Hosts:
     - 127.0.0.1:2379
     Key: stock.rpc
+
+# MySQL 数据库配置
+DB:
+  DataSource: root:root123@tcp(mysql:3306)/order_db?charset=utf8mb4&parseTime=True&loc=Local
