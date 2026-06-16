@@ -12,7 +12,7 @@ func RegisterRoutes(r *gin.Engine, svcCtx *svc.ServiceContext) {
 	// 全局中间件
 	r.Use(middleware.CORS())
 
-	api := r.Group("/api")
+	api := r.Group("/api/v1")
 	{
 		// ===== 用户接口 =====
 		user := api.Group("/user")
