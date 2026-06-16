@@ -57,6 +57,27 @@ services:
       - etcd
     restart: unless-stopped
 
+  order-rpc:
+    build:
+      context: ./rpc/order-rpc
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - etcd
+      - dtm
+    restart: unless-stopped
+
+  stock-rpc:
+    build:
+      context: ./rpc/stock-rpc
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    depends_on:
+      - etcd
+    restart: unless-stopped
+
   # ===== Gin API 网关（整合 user + order 接口）=====
   api-gateway:
     build:
@@ -70,49 +91,5 @@ services:
       - etcd
       - user-rpc
       - order-rpc
+      - stock-rpc
     restart: unless-stopped
-
-  # ===== 旧服务（即将废弃，由 api-gateway 替代）=====
-  # user-service:
-  #   build:
-  #     context: ./user-service
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8889:8888"
-  #   environment:
-  #     ETCD_ENDPOINTS: http://etcd:2379
-  #   depends_on:
-  #     - etcd
-  #     - user-rpc
-  #   restart: unless-stopped
-
-  # order-service:
-  #   build:
-  #     context: ./order-service
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8081:8081"
-  #   environment:
-  #     DTM_URL: http://dtm:36789
-  #     DB_DSN: root:root123@tcp(mysql:3306)/order_db?parseTime=true
-  #     ETCD_ENDPOINTS: http://etcd:2379
-  #   depends_on:
-  #     - dtm
-  #     - etcd
-  #   restart: unless-stopped
-
-  stock-service:
-    build:
-      context: ./stock-service
-      dockerfile: Dockerfile
-    ports:
-      - "8082:8082"
-    environment:
-      DTM_URL: http://dtm:36789
-      DB_DSN: root:root123@tcp(mysql:3306)/stock_db?parseTime=true
-      ETCD_ENDPOINTS: http://etcd:2379
-    depends_on:
-      - dtm
-      - etcd
-    restart: unless-stopped
-

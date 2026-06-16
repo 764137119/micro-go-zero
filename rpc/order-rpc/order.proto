@@ -41,6 +41,8 @@ message CreateOrderReq {
   string orderDes = 4;
   int64 orderBeginTime = 5;
   int64 orderEndTime = 6;
+  int64 skuId = 7;           // 商品 SKU ID（用于 Saga 扣减库存）
+  int64 quantity = 8;        // 商品数量（用于 Saga 扣减库存）
 }
 
 // 创建订单响应
@@ -51,6 +53,8 @@ message CreateOrderRsp {
 // 取消订单请求
 message CancelOrderReq {
   int64 OrderId = 1;
+  int64 skuId = 2;           // 商品 SKU ID（用于 Saga 回滚库存）
+  int64 quantity = 3;        // 商品数量（用于 Saga 回滚库存）
 }
 
 // 取消订单响应

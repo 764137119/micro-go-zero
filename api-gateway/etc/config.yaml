@@ -13,3 +13,11 @@ OrderRpc:
     Hosts:
       - 127.0.0.1:2379
     Key: order.rpc
+
+# DTM 协调器
+DTM: http://dtm:36789         # HTTP 地址（用于生成全局事务 ID）
+DTMEndpoint: dtm:36790        # gRPC 地址（用于提交 Saga 事务）
+
+# Saga 分支 gRPC 目标（dtm 回调使用）
+StockRpcTarget: stock-rpc:8082
+OrderRpcTarget: order-rpc:8081

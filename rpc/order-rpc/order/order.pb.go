@@ -287,6 +287,8 @@ type CreateOrderReq struct {
 	OrderDes       string                 `protobuf:"bytes,4,opt,name=orderDes,proto3" json:"orderDes,omitempty"`
 	OrderBeginTime int64                  `protobuf:"varint,5,opt,name=orderBeginTime,proto3" json:"orderBeginTime,omitempty"`
 	OrderEndTime   int64                  `protobuf:"varint,6,opt,name=orderEndTime,proto3" json:"orderEndTime,omitempty"`
+	SkuId          int64                  `protobuf:"varint,7,opt,name=skuId,proto3" json:"skuId,omitempty"`       // 商品 SKU ID（用于 Saga 扣减库存）
+	Quantity       int64                  `protobuf:"varint,8,opt,name=quantity,proto3" json:"quantity,omitempty"` // 商品数量（用于 Saga 扣减库存）
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -363,6 +365,20 @@ func (x *CreateOrderReq) GetOrderEndTime() int64 {
 	return 0
 }
 
+func (x *CreateOrderReq) GetSkuId() int64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *CreateOrderReq) GetQuantity() int64 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
 // 创建订单响应
 type CreateOrderRsp struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -412,6 +428,8 @@ func (x *CreateOrderRsp) GetOrderId() int64 {
 type CancelOrderReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderId       int64                  `protobuf:"varint,1,opt,name=OrderId,proto3" json:"OrderId,omitempty"`
+	SkuId         int64                  `protobuf:"varint,2,opt,name=skuId,proto3" json:"skuId,omitempty"`       // 商品 SKU ID（用于 Saga 回滚库存）
+	Quantity      int64                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"` // 商品数量（用于 Saga 回滚库存）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -449,6 +467,20 @@ func (*CancelOrderReq) Descriptor() ([]byte, []int) {
 func (x *CancelOrderReq) GetOrderId() int64 {
 	if x != nil {
 		return x.OrderId
+	}
+	return 0
+}
+
+func (x *CancelOrderReq) GetSkuId() int64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *CancelOrderReq) GetQuantity() int64 {
+	if x != nil {
+		return x.Quantity
 	}
 	return 0
 }
@@ -520,7 +552,7 @@ const file_order_proto_rawDesc = "" +
 	"orderState\x18\x02 \x01(\x05R\n" +
 	"orderState\"K\n" +
 	"\x13OrderStateCheckResp\x124\n" +
-	"\vorderCommon\x18\x01 \x01(\v2\x12.order.OrderCommonR\vorderCommon\"\xca\x01\n" +
+	"\vorderCommon\x18\x01 \x01(\v2\x12.order.OrderCommonR\vorderCommon\"\xfc\x01\n" +
 	"\x0eCreateOrderReq\x12\x16\n" +
 	"\x06userId\x18\x01 \x01(\x03R\x06userId\x12\x18\n" +
 	"\aorderNo\x18\x02 \x01(\tR\aorderNo\x12\x1e\n" +
@@ -529,11 +561,15 @@ const file_order_proto_rawDesc = "" +
 	"orderPrice\x12\x1a\n" +
 	"\borderDes\x18\x04 \x01(\tR\borderDes\x12&\n" +
 	"\x0eorderBeginTime\x18\x05 \x01(\x03R\x0eorderBeginTime\x12\"\n" +
-	"\forderEndTime\x18\x06 \x01(\x03R\forderEndTime\"*\n" +
+	"\forderEndTime\x18\x06 \x01(\x03R\forderEndTime\x12\x14\n" +
+	"\x05skuId\x18\a \x01(\x03R\x05skuId\x12\x1a\n" +
+	"\bquantity\x18\b \x01(\x03R\bquantity\"*\n" +
 	"\x0eCreateOrderRsp\x12\x18\n" +
-	"\aorderId\x18\x01 \x01(\x03R\aorderId\"*\n" +
+	"\aorderId\x18\x01 \x01(\x03R\aorderId\"\\\n" +
 	"\x0eCancelOrderReq\x12\x18\n" +
-	"\aOrderId\x18\x01 \x01(\x03R\aOrderId\"*\n" +
+	"\aOrderId\x18\x01 \x01(\x03R\aOrderId\x12\x14\n" +
+	"\x05skuId\x18\x02 \x01(\x03R\x05skuId\x12\x1a\n" +
+	"\bquantity\x18\x03 \x01(\x03R\bquantity\"*\n" +
 	"\x0eCancelOrderRsp\x12\x18\n" +
 	"\aOrderId\x18\x01 \x01(\x03R\aOrderId2\x92\x02\n" +
 	"\x05Order\x12E\n" +

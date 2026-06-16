@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package stock;
+
+option go_package = "./stock";
+
+import "google/protobuf/empty.proto";
+
+// ==================== Saga 分布式事务（dtm）接口 ====================
+// 这些接口由 dtm 在 Saga 全局事务中自动调用：
+//   正向：dtm 调用 DeductStock 扣减库存
+//   补偿：dtm 调用 RollbackStock 回滚库存（当 Saga 中任意分支失败时触发）
+// gid + transType 用于 dtm Barrier 机制，保证幂等和子事务屏障
+
+// Saga 正向：扣减库存请求（dtm Saga Action）
+message DeductStockReq {
+  string gid = 1;           // dtm 全局事务 ID（用于幂等去重 + 子事务屏障）
+  string transType = 2;     // dtm 事务类型，固定为 "saga"
+  int64 skuId = 3;          // 商品 SKU ID
+  int64 quantity = 4;       // 扣减数量
+  string orderNo = 5;       // 订单号（业务幂等键）
+}
+
+// Saga 补偿：回滚库存请求（dtm Saga Compensate）
+message RollbackStockReq {
+  string gid = 1;           // dtm 全局事务 ID
+  string transType = 2;     // dtm 事务类型，固定为 "saga"
+  int64 skuId = 3;          // 商品 SKU ID
+  int64 quantity = 4;       // 回滚数量
+  string orderNo = 5;       // 订单号
+}
+
+// ==================== 库存查询接口（非 dtm 调用）====================
+
+// 查询单个商品库存请求
+message QueryStockReq {
+  int64 skuId = 1;
+}
+
+// 单个商品库存信息
+message StockInfo {
+  int64 skuId = 1;            // SKU ID
+  int64 totalStock = 2;       // 总库存
+  int64 availableStock = 3;   // 可用库存（可下单量）
+  int64 lockedStock = 4;      // 锁定库存（被订单占用但未支付）
+}
+
+// 查询单个商品库存响应
+message QueryStockResp {
+  StockInfo stockInfo = 1;
+}
+
+// 批量查询库存请求
+message BatchQueryStockReq {
+  repeated int64 skuIds = 1;  // SKU ID 列表
+}
+
+// 批量查询库存响应
+message BatchQueryStockResp {
+  repeated StockInfo list = 1; // 库存信息列表
+}
+
+// 库存服务
+service Stock {
+  // Saga 正向：扣减库存（dtm Saga 全局事务中调用的 Action 分支）
+  rpc DeductStock(DeductStockReq) returns (google.protobuf.Empty);
+  // Saga 补偿：回滚库存（dtm Saga 全局事务失败时调用的 Compensate 分支）
+  rpc RollbackStock(RollbackStockReq) returns (google.protobuf.Empty);
+  // 查询单个商品库存
+  rpc QueryStock(QueryStockReq) returns (QueryStockResp);
+  // 批量查询商品库存
+  rpc BatchQueryStock(BatchQueryStockReq) returns (BatchQueryStockResp);
+}

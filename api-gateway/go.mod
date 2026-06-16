@@ -6,7 +6,25 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/zeromicro/go-zero v1.10.2
 	order-rpc v0.0.0
+	stock-rpc v0.0.0-00010101000000-000000000000
 	user-rpc v0.0.0
+)
+
+require (
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/dtm-labs/dtmcli v1.15.0 // indirect
+	github.com/dtm-labs/dtmdriver v0.0.3 // indirect
+	github.com/go-redis/redis/v8 v8.11.4 // indirect
+	github.com/go-resty/resty/v2 v2.7.0 // indirect
+	github.com/go-stack/stack v1.8.0 // indirect
+	github.com/golang/snappy v0.0.4 // indirect
+	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
+	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
+	github.com/xdg-go/scram v1.2.0 // indirect
+	github.com/xdg-go/stringprep v1.0.4 // indirect
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
+	go.mongodb.org/mongo-driver v1.8.3 // indirect
+	golang.org/x/sync v0.20.0 // indirect
 )
 
 require (
@@ -20,6 +38,7 @@ require (
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dtm-labs/dtmgrpc v1.15.0
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
@@ -121,3 +140,5 @@ replace (
 	order-rpc => ../rpc/order-rpc
 	user-rpc => ../rpc/user-rpc
 )
+
+replace stock-rpc => ../rpc/stock-rpc
