@@ -66,6 +66,7 @@ services:
       ETCD_ENDPOINTS: http://etcd:2379
     depends_on:
       - etcd
+      - user-rpc
     restart: unless-stopped
 
   order-service:
