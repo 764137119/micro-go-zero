@@ -32,6 +32,5 @@ func (l *DeductStockLogic) DeductStock(in *stock.DeductStockReq) (*emptypb.Empty
 	// 2. Barrier.CallWithDB() 保证子事务屏障
 	// 3. 扣减 available_stock，增加 locked_stock
 	// 4. 写入库存流水表 stock_flow_log
-
 	return &emptypb.Empty{}, nil
 }
