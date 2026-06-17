@@ -1,2 +1,8 @@
 order-service
 user-service
+stock-service
+
+# 编译产物（go build 生成的可执行文件）
+rpc/user-rpc/user-rpc
+rpc/order-rpc/order-rpc
+rpc/stock-rpc/stock-rpc
