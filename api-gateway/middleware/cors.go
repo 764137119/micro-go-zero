@@ -1,10 +1,12 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"google.golang.org/grpc/metadata"
 )
 
 // CORS 跨域中间件
@@ -32,6 +34,12 @@ func RequestIDMiddleware() gin.HandlerFunc {
 		}
 		c.Set("request_id", requestID)
 		c.Header("X-Request-ID", requestID)
+
+		md := metadata.Pairs("trace_id", requestID)
+		ctx := metadata.NewOutgoingContext(c.Request.Context(), md)
+		ctx = context.WithValue(ctx, "trace_id", requestID)
+
+		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
 }
