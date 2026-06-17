@@ -3,6 +3,7 @@ module order-rpc
 go 1.26.4
 
 require (
+	common v0.0.0-00010101000000-000000000000
 	github.com/zeromicro/go-zero v1.10.2
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
@@ -108,6 +109,7 @@ require (
 )
 
 replace (
+	common => ../common
 	order-rpc => ./
 	stock-rpc => ../stock-rpc
 )

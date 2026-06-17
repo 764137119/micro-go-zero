@@ -3,13 +3,13 @@ package svc
 import (
 	"log"
 
+	"common/gormx"
+	commodel "common/model"
 	"order-rpc/internal/config"
 	"order-rpc/internal/model"
 	"stock-rpc/stockclient"
 
 	"github.com/zeromicro/go-zero/zrpc"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 type ServiceContext struct {
@@ -17,13 +17,16 @@ type ServiceContext struct {
 	StockRpc                  stockclient.Stock
 	DTMEndpoint               string // dtm 协调器地址
 	OrderRepo                 *model.OrderRepo
-	SagaGlobalTransactionRepo *model.SagaGlobalTransactionRepo
+	SagaGlobalTransactionRepo *commodel.SagaGlobalTransactionRepo
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
-	db := mustNewDB(c.DB.DataSource)
+	db := gormx.MustNewDB(c.DB.DataSource)
 
-	// 自动迁移建表
+	// 自动迁移公共基础设施表（Saga 等）
+	gormx.MustMigrateCommon(db)
+
+	// 自动迁移业务表
 	if err := db.AutoMigrate(&model.Order{}); err != nil {
 		log.Fatalf("auto migrate order table failed: %v", err)
 	}
@@ -33,17 +36,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		StockRpc:                  stockclient.NewStock(zrpc.MustNewClient(c.StockRpc)),
 		DTMEndpoint:               c.DTM,
 		OrderRepo:                 model.NewOrderRepo(db),
-		SagaGlobalTransactionRepo: model.NewSagaGlobalTransactionRepo(db),
+		SagaGlobalTransactionRepo: commodel.NewSagaGlobalTransactionRepo(db),
 	}
-}
-
-// mustNewDB 创建 GORM 数据库连接
-func mustNewDB(dsn string) *gorm.DB {
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		SkipDefaultTransaction: true,
-	})
-	if err != nil {
-		log.Fatalf("failed to connect mysql: %v, dsn: %s", err, dsn)
-	}
-	return db
 }

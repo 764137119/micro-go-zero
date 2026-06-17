@@ -25,20 +25,40 @@ const (
 	SagaOperationTypeCompensate SagaOperationType = 2 // 补偿操作
 )
 
+/*
+CREATE TABLE `saga_branch_transaction` (
+    `branch_id` VARCHAR(64) NOT NULL COMMENT '分支事务ID，唯一标识一个分支事务',
+    `xid` VARCHAR(64) NOT NULL COMMENT '全局事务ID',
+    `service_name` VARCHAR(256) NOT NULL COMMENT '服务名称',
+    `operation_type` TINYINT NOT NULL COMMENT '操作类型: 1-正向, 2-补偿',
+    `status` TINYINT NOT NULL COMMENT '状态: 0-执行中, 1-成功, 2-失败, 3-已取消',
+    `request_data` TEXT COMMENT '请求数据（JSON序列化）',
+    `response_data` TEXT COMMENT '响应数据（JSON序列化）',
+    `retry_count` INT NOT NULL DEFAULT 0 COMMENT '重试次数',
+    `next_retry_time` DATETIME(3) DEFAULT NULL COMMENT '下次重试时间（指数退避）',
+    `version` BIGINT NOT NULL DEFAULT 1 COMMENT '乐观锁版本号',
+    `gmt_create` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `gmt_modified` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (`branch_id`),
+    KEY `idx_xid` (`xid`),
+    UNIQUE KEY `uk_xid_service_op` (`xid`, `service_name`, `operation_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Saga分支事务与补偿日志表';
+*/
+
 // SagaBranchTransaction Saga分支事务与补偿日志表模型
 type SagaBranchTransaction struct {
-	BranchId      string                      `gorm:"primaryKey;column:branch_id;type:varchar(64);not null"`
-	Xid           string                      `gorm:"column:xid;type:varchar(64);not null;index:idx_xid;uniqueIndex:uk_xid_service_op"`
-	ServiceName   string                      `gorm:"column:service_name;type:varchar(256);not null;uniqueIndex:uk_xid_service_op"`
-	OperationType SagaOperationType           `gorm:"column:operation_type;type:tinyint;not null;uniqueIndex:uk_xid_service_op"`
-	Status        SagaBranchTransactionStatus `gorm:"column:status;type:tinyint;not null"`
-	RequestData   *string                     `gorm:"column:request_data;type:text"`
-	ResponseData  *string                     `gorm:"column:response_data;type:text"`
-	RetryCount    int32                       `gorm:"column:retry_count;type:int;not null;default:0"`
-	NextRetryTime *time.Time                  `gorm:"column:next_retry_time;type:datetime(3)"`
-	Version       int64                       `gorm:"column:version;type:bigint;not null;default:1"`
-	GmtCreate     time.Time                   `gorm:"column:gmt_create;type:datetime(3);not null;autoCreateTime"`
-	GmtModified   time.Time                   `gorm:"column:gmt_modified;type:datetime(3);not null;autoUpdateTime"`
+	BranchId      string                      `gorm:"primaryKey;column:branch_id;type:varchar(64);not null"`                            // 分支事务ID，唯一标识一个分支事务
+	Xid           string                      `gorm:"column:xid;type:varchar(64);not null;index:idx_xid;uniqueIndex:uk_xid_service_op"` // 全局事务ID
+	ServiceName   string                      `gorm:"column:service_name;type:varchar(256);not null;uniqueIndex:uk_xid_service_op"`     // 服务名称
+	OperationType SagaOperationType           `gorm:"column:operation_type;type:tinyint;not null;uniqueIndex:uk_xid_service_op"`        // 操作类型: 1-正向, 2-补偿
+	Status        SagaBranchTransactionStatus `gorm:"column:status;type:tinyint;not null"`                                              // 状态: 0-执行中, 1-成功, 2-失败, 3-已取消
+	RequestData   *string                     `gorm:"column:request_data;type:text"`                                                    // 请求数据（JSON序列化）
+	ResponseData  *string                     `gorm:"column:response_data;type:text"`                                                   // 响应数据（JSON序列化）
+	RetryCount    int32                       `gorm:"column:retry_count;type:int;not null;default:0"`                                   // 重试次数
+	NextRetryTime *time.Time                  `gorm:"column:next_retry_time;type:datetime(3)"`                                          // 下次重试时间（指数退避）
+	Version       int64                       `gorm:"column:version;type:bigint;not null;default:1"`                                    // 乐观锁版本号
+	GmtCreate     time.Time                   `gorm:"column:gmt_create;type:datetime(3);not null;autoCreateTime"`                       // 创建时间
+	GmtModified   time.Time                   `gorm:"column:gmt_modified;type:datetime(3);not null;autoUpdateTime"`                     // 修改时间
 }
 
 // TableName 自定义表名

@@ -3,9 +3,11 @@ module user-rpc
 go 1.26.4
 
 require (
+	common v0.0.0-00010101000000-000000000000
 	github.com/zeromicro/go-zero v1.10.2
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
+	gorm.io/gorm v1.31.1
 )
 
 require (
@@ -90,7 +92,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
-	gorm.io/gorm v1.31.1 // indirect
 	k8s.io/api v0.34.3 // indirect
 	k8s.io/apimachinery v0.34.3 // indirect
 	k8s.io/client-go v0.34.3 // indirect
@@ -102,3 +103,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
+
+replace common => ../common

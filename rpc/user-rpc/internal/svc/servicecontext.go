@@ -1,13 +1,21 @@
 package svc
 
-import "user-rpc/internal/config"
+import (
+	"common/gormx"
+	"user-rpc/internal/config"
+	"user-rpc/internal/model"
+)
 
 type ServiceContext struct {
-	Config config.Config
+	Config   config.Config
+	UserRepo *model.UserRepo
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
+	db := gormx.MustNewDB(c.DB.DataSource)
+
 	return &ServiceContext{
-		Config: c,
+		Config:   c,
+		UserRepo: model.NewUserRepo(db),
 	}
 }

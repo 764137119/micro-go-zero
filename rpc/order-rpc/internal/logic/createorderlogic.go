@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"order-rpc/internal/model"
+	commodel "common/model"
 	"order-rpc/internal/svc"
 	"order-rpc/order"
 
@@ -39,9 +39,9 @@ func (l *CreateOrderLogic) CreateOrder(in *order.CreateOrderReq) (*order.CreateO
 			return nil, err
 		}
 		//写日志
-		var newSage = model.SagaGlobalTransaction{}
+		var newSage = commodel.SagaGlobalTransaction{}
 		newSage.Xid = in.Gid
-		newSage.Status = model.SagaGlobalTransactionStatusRunning
+		newSage.Status = commodel.SagaGlobalTransactionStatusRunning
 		newSage.GmtCreate = time.Now()
 		newSage.TransactionName = in.TransType
 		newSage.StartTime = newSage.GmtCreate
@@ -54,7 +54,7 @@ func (l *CreateOrderLogic) CreateOrder(in *order.CreateOrderReq) (*order.CreateO
 		}
 		sage = &newSage
 	}
-	if sage.Status == model.SagaGlobalTransactionStatusSucceed {
+	if sage.Status == commodel.SagaGlobalTransactionStatusSucceed {
 		//查询订单
 		order, err := l.svcCtx.OrderRepo.FindByXid(l.ctx, sage.Xid)
 		if err != nil {
@@ -64,7 +64,7 @@ func (l *CreateOrderLogic) CreateOrder(in *order.CreateOrderReq) (*order.CreateO
 		orderRsp.OrderId = order.OrderId
 		return orderRsp, nil
 	}
-	if sage.Status == model.SagaGlobalTransactionStatusRunning {
+	if sage.Status == commodel.SagaGlobalTransactionStatusRunning {
 		//查询订单并创建
 		order, err := l.svcCtx.OrderRepo.FindByXid(l.ctx, sage.Xid)
 		if err != nil {
