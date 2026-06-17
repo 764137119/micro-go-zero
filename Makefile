@@ -46,6 +46,41 @@ commit:
 
 # 项目根目录的 Makefile
 
+GOCTL_HOME := .goctl
+
+# 代码生成（使用项目内自定义模板 + snake_case 文件名）
+.PHONY: gen gen-user gen-order gen-stock
+
+gen: gen-user gen-order gen-stock
+	@echo "✅ 所有 RPC 代码生成完成"
+
+gen-user:
+	@echo "🔨 生成 user-rpc 代码..."
+	cd rpc/user-rpc && goctl rpc protoc user.proto \
+		--go_out=. --go-grpc_out=. \
+		--zrpc_out=. \
+		--home=$(abspath $(GOCTL_HOME)) \
+		--style=go_zero
+	@echo "✅ user-rpc 生成完成"
+
+gen-order:
+	@echo "🔨 生成 order-rpc 代码..."
+	cd rpc/order-rpc && goctl rpc protoc order.proto \
+		--go_out=. --go-grpc_out=. \
+		--zrpc_out=. \
+		--home=$(abspath $(GOCTL_HOME)) \
+		--style=go_zero
+	@echo "✅ order-rpc 生成完成"
+
+gen-stock:
+	@echo "🔨 生成 stock-rpc 代码..."
+	cd rpc/stock-rpc && goctl rpc protoc stock.proto \
+		--go_out=. --go-grpc_out=. \
+		--zrpc_out=. \
+		--home=$(abspath $(GOCTL_HOME)) \
+		--style=go_zero
+	@echo "✅ stock-rpc 生成完成"
+
 # 构建所有服务
 build-all: user-service order-service stock-service
 
