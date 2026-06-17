@@ -6,6 +6,7 @@ import (
 
 	"api-gateway/svc"
 	"api-gateway/types"
+	common "common/tools"
 	orderpb "order-rpc/order"
 	stockpb "stock-rpc/stock"
 
@@ -31,65 +32,92 @@ func OrderStateCheck(svcCtx *svc.ServiceContext) gin.HandlerFunc {
 	)
 }
 
-// CreateOrder 创建订单（DTM Saga 分布式事务）
+// CreateOrder 创建订单（DTM TCC 分布式事务）
 //
-// 编排流程：
+// 编排流程（TCC 三阶段）：
 //
-//  1. 扣减库存（stock-rpc DeductStock — 正向）
-//  2. 创建订单（order-rpc CreateOrder — 正向）
-//  3. 任意分支失败 → 自动执行对应补偿
-//     - stock-rpc RollbackStock（恢复库存）
-//     - order-rpc CancelOrder（取消订单）
+//	Phase 1 — Try（资源预留）：
+//	  - stock-rpc TccTryDeductStock：冻结库存（available_stock -= qty, locked_stock += qty）
+//	  - order-rpc TccTryOrder：创建订单（状态=待支付）
+//	Phase 2 — Confirm（全部 Try 成功后由 DTM 自动调用）：
+//	  - stock-rpc TccConfirmDeductStock：确认扣减（locked_stock -= qty）
+//	  - order-rpc TccConfirmOrder：确认订单
+//	Phase 2 — Cancel（任意 Try 失败后由 DTM 自动调用）：
+//	  - stock-rpc TccCancelDeductStock：释放库存（available_stock += qty, locked_stock -= qty）
+//	  - order-rpc TccCancelOrder：取消订单（状态→已取消）
 func CreateOrder(svcCtx *svc.ServiceContext) gin.HandlerFunc {
 	return HandleJSON(
 		func(ctx context.Context, req *types.CreateOrderReq) (*orderpb.CreateOrderRsp, error) {
-			// 1. 生成 DTM 全局事务 ID（通过 DTM gRPC 端口）
+			// 1. 后端生成唯一订单号（雪花算法），如前端已传入则覆盖
+			req.OrderNo = common.GenOrderNoStr()
+
+			// 2. 生成 DTM 全局事务 ID
 			gid := dtmgrpc.MustGenGid(svcCtx.Config.DTMEndpoint)
 
-			// 2. 构建 Saga gRPC 事务
-			//    Add 的 action/compensate 使用 grpc:// 协议的 URL
-			//    格式: grpc://{host}:{port}/{package}.{service}/{method}
-			saga := dtmgrpc.NewSagaGrpc(svcCtx.Config.DTMEndpoint, gid).
-				// 分支1: 扣减库存（正向）+ 回滚库存（补偿）
-				Add(
-					fmt.Sprintf("grpc://%s/stock.Stock/DeductStock", svcCtx.Config.StockRpcTarget),
-					fmt.Sprintf("grpc://%s/stock.Stock/RollbackStock", svcCtx.Config.StockRpcTarget),
-					&stockpb.DeductStockReq{
-						Gid:       gid,
-						TransType: "saga",
-						SkuId:     req.SkuId,
-						Quantity:  req.Quantity,
-						OrderNo:   req.OrderNo,
-					},
-				).
-				// 分支2: 创建订单（正向）+ 取消订单（补偿）
-				Add(
-					fmt.Sprintf("grpc://%s/order.Order/CreateOrder", svcCtx.Config.OrderRpcTarget),
-					fmt.Sprintf("grpc://%s/order.Order/CancelOrder", svcCtx.Config.OrderRpcTarget),
-					&orderpb.CreateOrderReq{
-						UserId:         req.UserID,
-						OrderNo:        req.OrderNo,
-						OrderPrice:     req.OrderPrice,
-						OrderDes:       req.OrderDes,
-						OrderBeginTime: req.OrderBeginTime,
-						OrderEndTime:   req.OrderEndTime,
-						SkuId:          req.SkuId,
-						Quantity:       req.Quantity,
-						Gid:            gid,
-						TransType:      "saga",
-					},
-				)
-
-			// 3. 提交 Saga 事务（同步等待全部完成或失败）
-			if err := saga.Submit(); err != nil {
-				return nil, fmt.Errorf("dtm saga submit failed: %w", err)
+			// 3. 定义 TCC 分支的业务数据（用于 CallBranch 注册）
+			//    注意：orderReply 定义在闭包外，闭包内赋值、闭包外读取
+			stockReq := &stockpb.TccTryDeductStockReq{
+				Xid:       gid,
+				TransType: "tcc",
+				SkuId:     req.SkuId,
+				Quantity:  req.Quantity,
+				OrderNo:   req.OrderNo,
+			}
+			orderReq := &orderpb.TccTryOrderReq{
+				UserId:         req.UserID,
+				OrderNo:        req.OrderNo,
+				OrderPrice:     req.OrderPrice,
+				OrderDes:       req.OrderDes,
+				OrderBeginTime: req.OrderBeginTime,
+				OrderEndTime:   req.OrderEndTime,
+				SkuId:          req.SkuId,
+				Quantity:       req.Quantity,
+				Xid:            gid,
+				TransType:      "tcc",
 			}
 
-			// Saga 执行成功，订单已由 order-rpc 创建
+			// 定义在闭包外，以便闭包内赋值后外部能读取
+			var orderReply orderpb.TccTryOrderResp
+
+			// 4. 执行 TCC 全局事务（Prepare + Try 分支 + Submit / Abort）
+			//    - Prepare：向 DTM 注册全局事务
+			//    - CallBranch：注册分支并立即执行 Try
+			//    - 全部 Try 成功 → Submit（DTM 异步调用 Confirm）
+			//    - 任一 Try 失败   → Abort（DTM 异步调用 Cancel）
+			err := dtmgrpc.TccGlobalTransaction(svcCtx.Config.DTMEndpoint, gid,
+				func(tcc *dtmgrpc.TccGrpc) error {
+					// 分支1：冻结库存（Try）
+					if err := tcc.CallBranch(
+						stockReq,
+						fmt.Sprintf("grpc://%s/stock.Stock/TccTryDeductStock", svcCtx.Config.StockRpcTarget),
+						fmt.Sprintf("grpc://%s/stock.Stock/TccConfirmDeductStock", svcCtx.Config.StockRpcTarget),
+						fmt.Sprintf("grpc://%s/stock.Stock/TccCancelDeductStock", svcCtx.Config.StockRpcTarget),
+						nil, // 不需要 reply
+					); err != nil {
+						return err
+					}
+
+					// 分支2：创建订单（Try），捕获返回的 orderId
+					if err := tcc.CallBranch(
+						orderReq,
+						fmt.Sprintf("grpc://%s/order.Order/TccTryOrder", svcCtx.Config.OrderRpcTarget),
+						fmt.Sprintf("grpc://%s/order.Order/TccConfirmOrder", svcCtx.Config.OrderRpcTarget),
+						fmt.Sprintf("grpc://%s/order.Order/TccCancelOrder", svcCtx.Config.OrderRpcTarget),
+						&orderReply,
+					); err != nil {
+						return err
+					}
+
+					return nil // 全部 Try 成功，DTM 将 Submit 全局事务
+				},
+			)
+			if err != nil {
+				return nil, fmt.Errorf("dtm tcc transaction failed: %w", err)
+			}
+
+			// TCC Try 阶段成功，订单已由 order-rpc TccTryOrder 创建（状态=待支付）
 			return &orderpb.CreateOrderRsp{
-				// orderId 由 order-rpc 本地生成并写入 DB，此处无法直接获取
-				// 客户端可通过 orderNo 后续查询订单信息
-				OrderId: 0,
+				OrderId: orderReply.OrderId, // 从 CallBranch reply 中获取 orderId
 			}, nil
 		},
 	)

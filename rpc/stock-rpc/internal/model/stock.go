@@ -7,6 +7,16 @@ import (
 	"gorm.io/gorm"
 )
 
+// 库存流水变动类型枚举
+const (
+	ChangeTypeDeduct    int32 = 1 // 扣减（Saga 正向）
+	ChangeTypeRollback  int32 = 2 // 回滚（Saga 补偿）
+	ChangeTypeRelease   int32 = 3 // 释放（超时取消）
+	ChangeTypeTry       int32 = 4 // 冻结（TCC Try）
+	ChangeTypeConfirm   int32 = 5 // 确认扣减（TCC Confirm）
+	ChangeTypeTccCancel int32 = 6 // 释放（TCC Cancel）
+)
+
 /*
 CREATE TABLE `stock_info` (
     `sku_id`          BIGINT NOT NULL COMMENT '商品SKU ID（主键）',
@@ -25,7 +35,7 @@ CREATE TABLE `stock_flow_log` (
     `flow_id`         BIGINT NOT NULL AUTO_INCREMENT COMMENT '流水ID（主键）',
     `sku_id`          BIGINT NOT NULL COMMENT '商品SKU ID',
     `order_no`        VARCHAR(64) NOT NULL COMMENT '订单号（业务幂等键）',
-    `change_type`     TINYINT NOT NULL COMMENT '变动类型：1-扣减(正向), 2-回滚(补偿), 3-释放(超时取消)',
+    `change_type`     TINYINT NOT NULL COMMENT '变动类型：1-扣减(正向), 2-回滚(补偿), 3-释放(超时取消), 4-冻结(TCC Try), 5-确认扣减(TCC Confirm), 6-释放(TCC Cancel)',
     `quantity`        BIGINT NOT NULL COMMENT '变动数量',
     `before_available` BIGINT NOT NULL COMMENT '变动前可用库存',
     `after_available`  BIGINT NOT NULL COMMENT '变动后可用库存',
@@ -160,4 +170,58 @@ func (r *StockRepo) HasFlowLogByXid(ctx context.Context, xid string) (bool, erro
 		return false, err
 	}
 	return count > 0, nil
+}
+
+// TryDeductStock 冻结库存：减少可用库存、增加锁定库存（TCC Try 操作）
+func (r *StockRepo) TryDeductStock(ctx context.Context, skuId int64, quantity int64) error {
+	result := r.db.WithContext(ctx).Model(&Stock{}).
+		Where("sku_id = ? AND available_stock >= ?", skuId, quantity).
+		Updates(map[string]interface{}{
+			"available_stock": gorm.Expr("available_stock - ?", quantity),
+			"locked_stock":    gorm.Expr("locked_stock + ?", quantity),
+			"updated_at":      time.Now().UnixMilli(),
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound // 可用库存不足
+	}
+	return nil
+}
+
+// ConfirmDeductStock 确认扣减库存：仅减少锁定库存（TCC Confirm 操作）
+// 可用库存已在 Try 阶段扣减，此处只清理锁定库存
+func (r *StockRepo) ConfirmDeductStock(ctx context.Context, skuId int64, quantity int64) error {
+	result := r.db.WithContext(ctx).Model(&Stock{}).
+		Where("sku_id = ? AND locked_stock >= ?", skuId, quantity).
+		Updates(map[string]interface{}{
+			"locked_stock": gorm.Expr("locked_stock - ?", quantity),
+			"updated_at":   time.Now().UnixMilli(),
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound // 锁定库存不足
+	}
+	return nil
+}
+
+// CancelDeductStock 释放冻结库存：增加可用库存、减少锁定库存（TCC Cancel 操作）
+func (r *StockRepo) CancelDeductStock(ctx context.Context, skuId int64, quantity int64) error {
+	result := r.db.WithContext(ctx).Model(&Stock{}).
+		Where("sku_id = ? AND locked_stock >= ?", skuId, quantity).
+		Updates(map[string]interface{}{
+			"available_stock": gorm.Expr("available_stock + ?", quantity),
+			"locked_stock":    gorm.Expr("locked_stock - ?", quantity),
+			"updated_at":      time.Now().UnixMilli(),
+		})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound // 锁定库存不足
+	}
+	return nil
 }

@@ -23,6 +23,9 @@ const (
 	Order_OrderStateCheck_FullMethodName = "/order.Order/OrderStateCheck"
 	Order_CreateOrder_FullMethodName     = "/order.Order/CreateOrder"
 	Order_CancelOrder_FullMethodName     = "/order.Order/CancelOrder"
+	Order_TccTryOrder_FullMethodName     = "/order.Order/TccTryOrder"
+	Order_TccConfirmOrder_FullMethodName = "/order.Order/TccConfirmOrder"
+	Order_TccCancelOrder_FullMethodName  = "/order.Order/TccCancelOrder"
 )
 
 // OrderClient is the client API for Order service.
@@ -39,6 +42,12 @@ type OrderClient interface {
 	CreateOrder(ctx context.Context, in *CreateOrderReq, opts ...grpc.CallOption) (*CreateOrderRsp, error)
 	// 取消订单
 	CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*CancelOrderRsp, error)
+	// TCC Try：预留订单资源（由业务方/编排层在 Try 阶段调用）
+	TccTryOrder(ctx context.Context, in *TccTryOrderReq, opts ...grpc.CallOption) (*TccTryOrderResp, error)
+	// TCC Confirm：确认订单（由 DTM 在 Confirm 阶段回调）
+	TccConfirmOrder(ctx context.Context, in *TccConfirmOrderReq, opts ...grpc.CallOption) (*TccConfirmOrderResp, error)
+	// TCC Cancel：回滚订单（由 DTM 在 Cancel 阶段回调）
+	TccCancelOrder(ctx context.Context, in *TccCancelOrderReq, opts ...grpc.CallOption) (*TccCancelOrderResp, error)
 }
 
 type orderClient struct {
@@ -89,6 +98,36 @@ func (c *orderClient) CancelOrder(ctx context.Context, in *CancelOrderReq, opts 
 	return out, nil
 }
 
+func (c *orderClient) TccTryOrder(ctx context.Context, in *TccTryOrderReq, opts ...grpc.CallOption) (*TccTryOrderResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TccTryOrderResp)
+	err := c.cc.Invoke(ctx, Order_TccTryOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *orderClient) TccConfirmOrder(ctx context.Context, in *TccConfirmOrderReq, opts ...grpc.CallOption) (*TccConfirmOrderResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TccConfirmOrderResp)
+	err := c.cc.Invoke(ctx, Order_TccConfirmOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *orderClient) TccCancelOrder(ctx context.Context, in *TccCancelOrderReq, opts ...grpc.CallOption) (*TccCancelOrderResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TccCancelOrderResp)
+	err := c.cc.Invoke(ctx, Order_TccCancelOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServer is the server API for Order service.
 // All implementations must embed UnimplementedOrderServer
 // for forward compatibility.
@@ -103,6 +142,12 @@ type OrderServer interface {
 	CreateOrder(context.Context, *CreateOrderReq) (*CreateOrderRsp, error)
 	// 取消订单
 	CancelOrder(context.Context, *CancelOrderReq) (*CancelOrderRsp, error)
+	// TCC Try：预留订单资源（由业务方/编排层在 Try 阶段调用）
+	TccTryOrder(context.Context, *TccTryOrderReq) (*TccTryOrderResp, error)
+	// TCC Confirm：确认订单（由 DTM 在 Confirm 阶段回调）
+	TccConfirmOrder(context.Context, *TccConfirmOrderReq) (*TccConfirmOrderResp, error)
+	// TCC Cancel：回滚订单（由 DTM 在 Cancel 阶段回调）
+	TccCancelOrder(context.Context, *TccCancelOrderReq) (*TccCancelOrderResp, error)
 	mustEmbedUnimplementedOrderServer()
 }
 
@@ -124,6 +169,15 @@ func (UnimplementedOrderServer) CreateOrder(context.Context, *CreateOrderReq) (*
 }
 func (UnimplementedOrderServer) CancelOrder(context.Context, *CancelOrderReq) (*CancelOrderRsp, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelOrder not implemented")
+}
+func (UnimplementedOrderServer) TccTryOrder(context.Context, *TccTryOrderReq) (*TccTryOrderResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method TccTryOrder not implemented")
+}
+func (UnimplementedOrderServer) TccConfirmOrder(context.Context, *TccConfirmOrderReq) (*TccConfirmOrderResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method TccConfirmOrder not implemented")
+}
+func (UnimplementedOrderServer) TccCancelOrder(context.Context, *TccCancelOrderReq) (*TccCancelOrderResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method TccCancelOrder not implemented")
 }
 func (UnimplementedOrderServer) mustEmbedUnimplementedOrderServer() {}
 func (UnimplementedOrderServer) testEmbeddedByValue()               {}
@@ -218,6 +272,60 @@ func _Order_CancelOrder_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Order_TccTryOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TccTryOrderReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServer).TccTryOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Order_TccTryOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServer).TccTryOrder(ctx, req.(*TccTryOrderReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Order_TccConfirmOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TccConfirmOrderReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServer).TccConfirmOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Order_TccConfirmOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServer).TccConfirmOrder(ctx, req.(*TccConfirmOrderReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Order_TccCancelOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TccCancelOrderReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServer).TccCancelOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Order_TccCancelOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServer).TccCancelOrder(ctx, req.(*TccCancelOrderReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Order_ServiceDesc is the grpc.ServiceDesc for Order service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -240,6 +348,18 @@ var Order_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelOrder",
 			Handler:    _Order_CancelOrder_Handler,
+		},
+		{
+			MethodName: "TccTryOrder",
+			Handler:    _Order_TccTryOrder_Handler,
+		},
+		{
+			MethodName: "TccConfirmOrder",
+			Handler:    _Order_TccConfirmOrder_Handler,
+		},
+		{
+			MethodName: "TccCancelOrder",
+			Handler:    _Order_TccCancelOrder_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

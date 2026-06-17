@@ -289,7 +289,7 @@ type CreateOrderReq struct {
 	OrderEndTime   int64                  `protobuf:"varint,6,opt,name=orderEndTime,proto3" json:"orderEndTime,omitempty"`
 	SkuId          int64                  `protobuf:"varint,7,opt,name=skuId,proto3" json:"skuId,omitempty"`         // 商品 SKU ID（用于 Saga 扣减库存）
 	Quantity       int64                  `protobuf:"varint,8,opt,name=quantity,proto3" json:"quantity,omitempty"`   // 商品数量（用于 Saga 扣减库存）
-	Gid            string                 `protobuf:"bytes,9,opt,name=gid,proto3" json:"gid,omitempty"`              // DTM 全局事务 ID（用于幂等去重 + 子事务屏障）
+	Xid            string                 `protobuf:"bytes,9,opt,name=xid,proto3" json:"xid,omitempty"`              // DTM 全局事务 ID（用于幂等去重 + 子事务屏障）
 	TransType      string                 `protobuf:"bytes,10,opt,name=transType,proto3" json:"transType,omitempty"` // DTM 事务类型，固定为 "saga"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -381,9 +381,9 @@ func (x *CreateOrderReq) GetQuantity() int64 {
 	return 0
 }
 
-func (x *CreateOrderReq) GetGid() string {
+func (x *CreateOrderReq) GetXid() string {
 	if x != nil {
-		return x.Gid
+		return x.Xid
 	}
 	return ""
 }
@@ -446,7 +446,7 @@ type CancelOrderReq struct {
 	OrderId       int64                  `protobuf:"varint,1,opt,name=OrderId,proto3" json:"OrderId,omitempty"`
 	SkuId         int64                  `protobuf:"varint,2,opt,name=skuId,proto3" json:"skuId,omitempty"`        // 商品 SKU ID（用于 Saga 回滚库存）
 	Quantity      int64                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`  // 商品数量（用于 Saga 回滚库存）
-	Gid           string                 `protobuf:"bytes,4,opt,name=gid,proto3" json:"gid,omitempty"`             // DTM 全局事务 ID
+	Xid           string                 `protobuf:"bytes,4,opt,name=xid,proto3" json:"xid,omitempty"`             // DTM 全局事务 ID
 	TransType     string                 `protobuf:"bytes,5,opt,name=transType,proto3" json:"transType,omitempty"` // DTM 事务类型，固定为 "saga"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -503,9 +503,9 @@ func (x *CancelOrderReq) GetQuantity() int64 {
 	return 0
 }
 
-func (x *CancelOrderReq) GetGid() string {
+func (x *CancelOrderReq) GetXid() string {
 	if x != nil {
-		return x.Gid
+		return x.Xid
 	}
 	return ""
 }
@@ -562,6 +562,396 @@ func (x *CancelOrderRsp) GetOrderId() int64 {
 	return 0
 }
 
+// TCC Try：订单资源预留请求（Phase 1）
+type TccTryOrderReq struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	UserId         int64                  `protobuf:"varint,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	OrderNo        string                 `protobuf:"bytes,2,opt,name=orderNo,proto3" json:"orderNo,omitempty"`
+	OrderPrice     int64                  `protobuf:"varint,3,opt,name=orderPrice,proto3" json:"orderPrice,omitempty"`
+	OrderDes       string                 `protobuf:"bytes,4,opt,name=orderDes,proto3" json:"orderDes,omitempty"`
+	OrderBeginTime int64                  `protobuf:"varint,5,opt,name=orderBeginTime,proto3" json:"orderBeginTime,omitempty"`
+	OrderEndTime   int64                  `protobuf:"varint,6,opt,name=orderEndTime,proto3" json:"orderEndTime,omitempty"`
+	SkuId          int64                  `protobuf:"varint,7,opt,name=skuId,proto3" json:"skuId,omitempty"`         // 商品 SKU ID（Try 阶段冻结库存）
+	Quantity       int64                  `protobuf:"varint,8,opt,name=quantity,proto3" json:"quantity,omitempty"`   // 商品数量
+	Xid            string                 `protobuf:"bytes,9,opt,name=xid,proto3" json:"xid,omitempty"`              // DTM 全局事务 ID（用于幂等去重 + 子事务屏障）
+	TransType      string                 `protobuf:"bytes,10,opt,name=transType,proto3" json:"transType,omitempty"` // DTM 事务类型，固定为 "tcc"
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *TccTryOrderReq) Reset() {
+	*x = TccTryOrderReq{}
+	mi := &file_order_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TccTryOrderReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TccTryOrderReq) ProtoMessage() {}
+
+func (x *TccTryOrderReq) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TccTryOrderReq.ProtoReflect.Descriptor instead.
+func (*TccTryOrderReq) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *TccTryOrderReq) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *TccTryOrderReq) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *TccTryOrderReq) GetOrderPrice() int64 {
+	if x != nil {
+		return x.OrderPrice
+	}
+	return 0
+}
+
+func (x *TccTryOrderReq) GetOrderDes() string {
+	if x != nil {
+		return x.OrderDes
+	}
+	return ""
+}
+
+func (x *TccTryOrderReq) GetOrderBeginTime() int64 {
+	if x != nil {
+		return x.OrderBeginTime
+	}
+	return 0
+}
+
+func (x *TccTryOrderReq) GetOrderEndTime() int64 {
+	if x != nil {
+		return x.OrderEndTime
+	}
+	return 0
+}
+
+func (x *TccTryOrderReq) GetSkuId() int64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *TccTryOrderReq) GetQuantity() int64 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *TccTryOrderReq) GetXid() string {
+	if x != nil {
+		return x.Xid
+	}
+	return ""
+}
+
+func (x *TccTryOrderReq) GetTransType() string {
+	if x != nil {
+		return x.TransType
+	}
+	return ""
+}
+
+// TCC Try：订单资源预留响应
+type TccTryOrderResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       int64                  `protobuf:"varint,1,opt,name=orderId,proto3" json:"orderId,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TccTryOrderResp) Reset() {
+	*x = TccTryOrderResp{}
+	mi := &file_order_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TccTryOrderResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TccTryOrderResp) ProtoMessage() {}
+
+func (x *TccTryOrderResp) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TccTryOrderResp.ProtoReflect.Descriptor instead.
+func (*TccTryOrderResp) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *TccTryOrderResp) GetOrderId() int64 {
+	if x != nil {
+		return x.OrderId
+	}
+	return 0
+}
+
+// TCC Confirm：订单确认请求（Phase 2 - 提交，由 DTM 回调）
+type TccConfirmOrderReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       int64                  `protobuf:"varint,1,opt,name=orderId,proto3" json:"orderId,omitempty"`
+	Xid           string                 `protobuf:"bytes,2,opt,name=xid,proto3" json:"xid,omitempty"`             // DTM 全局事务 ID
+	TransType     string                 `protobuf:"bytes,3,opt,name=transType,proto3" json:"transType,omitempty"` // DTM 事务类型，固定为 "tcc"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TccConfirmOrderReq) Reset() {
+	*x = TccConfirmOrderReq{}
+	mi := &file_order_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TccConfirmOrderReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TccConfirmOrderReq) ProtoMessage() {}
+
+func (x *TccConfirmOrderReq) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TccConfirmOrderReq.ProtoReflect.Descriptor instead.
+func (*TccConfirmOrderReq) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *TccConfirmOrderReq) GetOrderId() int64 {
+	if x != nil {
+		return x.OrderId
+	}
+	return 0
+}
+
+func (x *TccConfirmOrderReq) GetXid() string {
+	if x != nil {
+		return x.Xid
+	}
+	return ""
+}
+
+func (x *TccConfirmOrderReq) GetTransType() string {
+	if x != nil {
+		return x.TransType
+	}
+	return ""
+}
+
+// TCC Confirm：订单确认响应
+type TccConfirmOrderResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       int64                  `protobuf:"varint,1,opt,name=orderId,proto3" json:"orderId,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TccConfirmOrderResp) Reset() {
+	*x = TccConfirmOrderResp{}
+	mi := &file_order_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TccConfirmOrderResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TccConfirmOrderResp) ProtoMessage() {}
+
+func (x *TccConfirmOrderResp) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TccConfirmOrderResp.ProtoReflect.Descriptor instead.
+func (*TccConfirmOrderResp) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *TccConfirmOrderResp) GetOrderId() int64 {
+	if x != nil {
+		return x.OrderId
+	}
+	return 0
+}
+
+// TCC Cancel：订单回滚请求（Phase 2 - 回滚，由 DTM 回调）
+type TccCancelOrderReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo       string                 `protobuf:"bytes,1,opt,name=orderNo,proto3" json:"orderNo,omitempty"`
+	SkuId         int64                  `protobuf:"varint,2,opt,name=skuId,proto3" json:"skuId,omitempty"`        // 商品 SKU ID（Cancel 释放库存）
+	Quantity      int64                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`  // 商品数量
+	Xid           string                 `protobuf:"bytes,4,opt,name=xid,proto3" json:"xid,omitempty"`             // DTM 全局事务 ID
+	TransType     string                 `protobuf:"bytes,5,opt,name=transType,proto3" json:"transType,omitempty"` // DTM 事务类型，固定为 "tcc"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TccCancelOrderReq) Reset() {
+	*x = TccCancelOrderReq{}
+	mi := &file_order_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TccCancelOrderReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TccCancelOrderReq) ProtoMessage() {}
+
+func (x *TccCancelOrderReq) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TccCancelOrderReq.ProtoReflect.Descriptor instead.
+func (*TccCancelOrderReq) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *TccCancelOrderReq) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *TccCancelOrderReq) GetSkuId() int64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *TccCancelOrderReq) GetQuantity() int64 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *TccCancelOrderReq) GetXid() string {
+	if x != nil {
+		return x.Xid
+	}
+	return ""
+}
+
+func (x *TccCancelOrderReq) GetTransType() string {
+	if x != nil {
+		return x.TransType
+	}
+	return ""
+}
+
+// TCC Cancel：订单回滚响应
+type TccCancelOrderResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       int64                  `protobuf:"varint,1,opt,name=orderId,proto3" json:"orderId,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TccCancelOrderResp) Reset() {
+	*x = TccCancelOrderResp{}
+	mi := &file_order_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TccCancelOrderResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TccCancelOrderResp) ProtoMessage() {}
+
+func (x *TccCancelOrderResp) ProtoReflect() protoreflect.Message {
+	mi := &file_order_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TccCancelOrderResp.ProtoReflect.Descriptor instead.
+func (*TccCancelOrderResp) Descriptor() ([]byte, []int) {
+	return file_order_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *TccCancelOrderResp) GetOrderId() int64 {
+	if x != nil {
+		return x.OrderId
+	}
+	return 0
+}
+
 var File_order_proto protoreflect.FileDescriptor
 
 const file_order_proto_rawDesc = "" +
@@ -596,7 +986,7 @@ const file_order_proto_rawDesc = "" +
 	"\forderEndTime\x18\x06 \x01(\x03R\forderEndTime\x12\x14\n" +
 	"\x05skuId\x18\a \x01(\x03R\x05skuId\x12\x1a\n" +
 	"\bquantity\x18\b \x01(\x03R\bquantity\x12\x10\n" +
-	"\x03gid\x18\t \x01(\tR\x03gid\x12\x1c\n" +
+	"\x03xid\x18\t \x01(\tR\x03xid\x12\x1c\n" +
 	"\ttransType\x18\n" +
 	" \x01(\tR\ttransType\"*\n" +
 	"\x0eCreateOrderRsp\x12\x18\n" +
@@ -605,15 +995,48 @@ const file_order_proto_rawDesc = "" +
 	"\aOrderId\x18\x01 \x01(\x03R\aOrderId\x12\x14\n" +
 	"\x05skuId\x18\x02 \x01(\x03R\x05skuId\x12\x1a\n" +
 	"\bquantity\x18\x03 \x01(\x03R\bquantity\x12\x10\n" +
-	"\x03gid\x18\x04 \x01(\tR\x03gid\x12\x1c\n" +
+	"\x03xid\x18\x04 \x01(\tR\x03xid\x12\x1c\n" +
 	"\ttransType\x18\x05 \x01(\tR\ttransType\"*\n" +
 	"\x0eCancelOrderRsp\x12\x18\n" +
-	"\aOrderId\x18\x01 \x01(\x03R\aOrderId2\x92\x02\n" +
+	"\aOrderId\x18\x01 \x01(\x03R\aOrderId\"\xac\x02\n" +
+	"\x0eTccTryOrderReq\x12\x16\n" +
+	"\x06userId\x18\x01 \x01(\x03R\x06userId\x12\x18\n" +
+	"\aorderNo\x18\x02 \x01(\tR\aorderNo\x12\x1e\n" +
+	"\n" +
+	"orderPrice\x18\x03 \x01(\x03R\n" +
+	"orderPrice\x12\x1a\n" +
+	"\borderDes\x18\x04 \x01(\tR\borderDes\x12&\n" +
+	"\x0eorderBeginTime\x18\x05 \x01(\x03R\x0eorderBeginTime\x12\"\n" +
+	"\forderEndTime\x18\x06 \x01(\x03R\forderEndTime\x12\x14\n" +
+	"\x05skuId\x18\a \x01(\x03R\x05skuId\x12\x1a\n" +
+	"\bquantity\x18\b \x01(\x03R\bquantity\x12\x10\n" +
+	"\x03xid\x18\t \x01(\tR\x03xid\x12\x1c\n" +
+	"\ttransType\x18\n" +
+	" \x01(\tR\ttransType\"+\n" +
+	"\x0fTccTryOrderResp\x12\x18\n" +
+	"\aorderId\x18\x01 \x01(\x03R\aorderId\"^\n" +
+	"\x12TccConfirmOrderReq\x12\x18\n" +
+	"\aorderId\x18\x01 \x01(\x03R\aorderId\x12\x10\n" +
+	"\x03xid\x18\x02 \x01(\tR\x03xid\x12\x1c\n" +
+	"\ttransType\x18\x03 \x01(\tR\ttransType\"/\n" +
+	"\x13TccConfirmOrderResp\x12\x18\n" +
+	"\aorderId\x18\x01 \x01(\x03R\aorderId\"\x8f\x01\n" +
+	"\x11TccCancelOrderReq\x12\x18\n" +
+	"\aorderNo\x18\x01 \x01(\tR\aorderNo\x12\x14\n" +
+	"\x05skuId\x18\x02 \x01(\x03R\x05skuId\x12\x1a\n" +
+	"\bquantity\x18\x03 \x01(\x03R\bquantity\x12\x10\n" +
+	"\x03xid\x18\x04 \x01(\tR\x03xid\x12\x1c\n" +
+	"\ttransType\x18\x05 \x01(\tR\ttransType\".\n" +
+	"\x12TccCancelOrderResp\x12\x18\n" +
+	"\aorderId\x18\x01 \x01(\x03R\aorderId2\xe1\x03\n" +
 	"\x05Order\x12E\n" +
 	"\x0eOrderCommitPay\x12\x18.order.OrderCommitPayReq\x1a\x19.order.OrderCommitPayResp\x12H\n" +
 	"\x0fOrderStateCheck\x12\x19.order.OrderStateCheckReq\x1a\x1a.order.OrderStateCheckResp\x12;\n" +
 	"\vCreateOrder\x12\x15.order.CreateOrderReq\x1a\x15.order.CreateOrderRsp\x12;\n" +
-	"\vCancelOrder\x12\x15.order.CancelOrderReq\x1a\x15.order.CancelOrderRspB\tZ\a./orderb\x06proto3"
+	"\vCancelOrder\x12\x15.order.CancelOrderReq\x1a\x15.order.CancelOrderRsp\x12<\n" +
+	"\vTccTryOrder\x12\x15.order.TccTryOrderReq\x1a\x16.order.TccTryOrderResp\x12H\n" +
+	"\x0fTccConfirmOrder\x12\x19.order.TccConfirmOrderReq\x1a\x1a.order.TccConfirmOrderResp\x12E\n" +
+	"\x0eTccCancelOrder\x12\x18.order.TccCancelOrderReq\x1a\x19.order.TccCancelOrderRespB\tZ\a./orderb\x06proto3"
 
 var (
 	file_order_proto_rawDescOnce sync.Once
@@ -627,7 +1050,7 @@ func file_order_proto_rawDescGZIP() []byte {
 	return file_order_proto_rawDescData
 }
 
-var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_order_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_order_proto_goTypes = []any{
 	(*OrderCommon)(nil),         // 0: order.OrderCommon
 	(*OrderCommitPayReq)(nil),   // 1: order.OrderCommitPayReq
@@ -638,22 +1061,34 @@ var file_order_proto_goTypes = []any{
 	(*CreateOrderRsp)(nil),      // 6: order.CreateOrderRsp
 	(*CancelOrderReq)(nil),      // 7: order.CancelOrderReq
 	(*CancelOrderRsp)(nil),      // 8: order.CancelOrderRsp
+	(*TccTryOrderReq)(nil),      // 9: order.TccTryOrderReq
+	(*TccTryOrderResp)(nil),     // 10: order.TccTryOrderResp
+	(*TccConfirmOrderReq)(nil),  // 11: order.TccConfirmOrderReq
+	(*TccConfirmOrderResp)(nil), // 12: order.TccConfirmOrderResp
+	(*TccCancelOrderReq)(nil),   // 13: order.TccCancelOrderReq
+	(*TccCancelOrderResp)(nil),  // 14: order.TccCancelOrderResp
 }
 var file_order_proto_depIdxs = []int32{
-	0, // 0: order.OrderStateCheckResp.orderCommon:type_name -> order.OrderCommon
-	1, // 1: order.Order.OrderCommitPay:input_type -> order.OrderCommitPayReq
-	3, // 2: order.Order.OrderStateCheck:input_type -> order.OrderStateCheckReq
-	5, // 3: order.Order.CreateOrder:input_type -> order.CreateOrderReq
-	7, // 4: order.Order.CancelOrder:input_type -> order.CancelOrderReq
-	2, // 5: order.Order.OrderCommitPay:output_type -> order.OrderCommitPayResp
-	4, // 6: order.Order.OrderStateCheck:output_type -> order.OrderStateCheckResp
-	6, // 7: order.Order.CreateOrder:output_type -> order.CreateOrderRsp
-	8, // 8: order.Order.CancelOrder:output_type -> order.CancelOrderRsp
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0,  // 0: order.OrderStateCheckResp.orderCommon:type_name -> order.OrderCommon
+	1,  // 1: order.Order.OrderCommitPay:input_type -> order.OrderCommitPayReq
+	3,  // 2: order.Order.OrderStateCheck:input_type -> order.OrderStateCheckReq
+	5,  // 3: order.Order.CreateOrder:input_type -> order.CreateOrderReq
+	7,  // 4: order.Order.CancelOrder:input_type -> order.CancelOrderReq
+	9,  // 5: order.Order.TccTryOrder:input_type -> order.TccTryOrderReq
+	11, // 6: order.Order.TccConfirmOrder:input_type -> order.TccConfirmOrderReq
+	13, // 7: order.Order.TccCancelOrder:input_type -> order.TccCancelOrderReq
+	2,  // 8: order.Order.OrderCommitPay:output_type -> order.OrderCommitPayResp
+	4,  // 9: order.Order.OrderStateCheck:output_type -> order.OrderStateCheckResp
+	6,  // 10: order.Order.CreateOrder:output_type -> order.CreateOrderRsp
+	8,  // 11: order.Order.CancelOrder:output_type -> order.CancelOrderRsp
+	10, // 12: order.Order.TccTryOrder:output_type -> order.TccTryOrderResp
+	12, // 13: order.Order.TccConfirmOrder:output_type -> order.TccConfirmOrderResp
+	14, // 14: order.Order.TccCancelOrder:output_type -> order.TccCancelOrderResp
+	8,  // [8:15] is the sub-list for method output_type
+	1,  // [1:8] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_order_proto_init() }
@@ -667,7 +1102,7 @@ func file_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_order_proto_rawDesc), len(file_order_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

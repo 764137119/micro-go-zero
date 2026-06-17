@@ -20,10 +20,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Stock_DeductStock_FullMethodName     = "/stock.Stock/DeductStock"
-	Stock_RollbackStock_FullMethodName   = "/stock.Stock/RollbackStock"
-	Stock_QueryStock_FullMethodName      = "/stock.Stock/QueryStock"
-	Stock_BatchQueryStock_FullMethodName = "/stock.Stock/BatchQueryStock"
+	Stock_DeductStock_FullMethodName           = "/stock.Stock/DeductStock"
+	Stock_RollbackStock_FullMethodName         = "/stock.Stock/RollbackStock"
+	Stock_QueryStock_FullMethodName            = "/stock.Stock/QueryStock"
+	Stock_BatchQueryStock_FullMethodName       = "/stock.Stock/BatchQueryStock"
+	Stock_TccTryDeductStock_FullMethodName     = "/stock.Stock/TccTryDeductStock"
+	Stock_TccConfirmDeductStock_FullMethodName = "/stock.Stock/TccConfirmDeductStock"
+	Stock_TccCancelDeductStock_FullMethodName  = "/stock.Stock/TccCancelDeductStock"
 )
 
 // StockClient is the client API for Stock service.
@@ -40,6 +43,12 @@ type StockClient interface {
 	QueryStock(ctx context.Context, in *QueryStockReq, opts ...grpc.CallOption) (*QueryStockResp, error)
 	// 批量查询商品库存
 	BatchQueryStock(ctx context.Context, in *BatchQueryStockReq, opts ...grpc.CallOption) (*BatchQueryStockResp, error)
+	// TCC Try：冻结库存（dtm TCC 全局事务 Try 阶段调用，预留资源）
+	TccTryDeductStock(ctx context.Context, in *TccTryDeductStockReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// TCC Confirm：确认扣减库存（dtm TCC 全局事务 Confirm 阶段回调）
+	TccConfirmDeductStock(ctx context.Context, in *TccConfirmDeductStockReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// TCC Cancel：释放库存（dtm TCC 全局事务 Cancel 阶段回调）
+	TccCancelDeductStock(ctx context.Context, in *TccCancelDeductStockReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type stockClient struct {
@@ -90,6 +99,36 @@ func (c *stockClient) BatchQueryStock(ctx context.Context, in *BatchQueryStockRe
 	return out, nil
 }
 
+func (c *stockClient) TccTryDeductStock(ctx context.Context, in *TccTryDeductStockReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Stock_TccTryDeductStock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *stockClient) TccConfirmDeductStock(ctx context.Context, in *TccConfirmDeductStockReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Stock_TccConfirmDeductStock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *stockClient) TccCancelDeductStock(ctx context.Context, in *TccCancelDeductStockReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Stock_TccCancelDeductStock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StockServer is the server API for Stock service.
 // All implementations must embed UnimplementedStockServer
 // for forward compatibility.
@@ -104,6 +143,12 @@ type StockServer interface {
 	QueryStock(context.Context, *QueryStockReq) (*QueryStockResp, error)
 	// 批量查询商品库存
 	BatchQueryStock(context.Context, *BatchQueryStockReq) (*BatchQueryStockResp, error)
+	// TCC Try：冻结库存（dtm TCC 全局事务 Try 阶段调用，预留资源）
+	TccTryDeductStock(context.Context, *TccTryDeductStockReq) (*emptypb.Empty, error)
+	// TCC Confirm：确认扣减库存（dtm TCC 全局事务 Confirm 阶段回调）
+	TccConfirmDeductStock(context.Context, *TccConfirmDeductStockReq) (*emptypb.Empty, error)
+	// TCC Cancel：释放库存（dtm TCC 全局事务 Cancel 阶段回调）
+	TccCancelDeductStock(context.Context, *TccCancelDeductStockReq) (*emptypb.Empty, error)
 	mustEmbedUnimplementedStockServer()
 }
 
@@ -125,6 +170,15 @@ func (UnimplementedStockServer) QueryStock(context.Context, *QueryStockReq) (*Qu
 }
 func (UnimplementedStockServer) BatchQueryStock(context.Context, *BatchQueryStockReq) (*BatchQueryStockResp, error) {
 	return nil, status.Error(codes.Unimplemented, "method BatchQueryStock not implemented")
+}
+func (UnimplementedStockServer) TccTryDeductStock(context.Context, *TccTryDeductStockReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method TccTryDeductStock not implemented")
+}
+func (UnimplementedStockServer) TccConfirmDeductStock(context.Context, *TccConfirmDeductStockReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method TccConfirmDeductStock not implemented")
+}
+func (UnimplementedStockServer) TccCancelDeductStock(context.Context, *TccCancelDeductStockReq) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method TccCancelDeductStock not implemented")
 }
 func (UnimplementedStockServer) mustEmbedUnimplementedStockServer() {}
 func (UnimplementedStockServer) testEmbeddedByValue()               {}
@@ -219,6 +273,60 @@ func _Stock_BatchQueryStock_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Stock_TccTryDeductStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TccTryDeductStockReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StockServer).TccTryDeductStock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Stock_TccTryDeductStock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StockServer).TccTryDeductStock(ctx, req.(*TccTryDeductStockReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Stock_TccConfirmDeductStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TccConfirmDeductStockReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StockServer).TccConfirmDeductStock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Stock_TccConfirmDeductStock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StockServer).TccConfirmDeductStock(ctx, req.(*TccConfirmDeductStockReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Stock_TccCancelDeductStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TccCancelDeductStockReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StockServer).TccCancelDeductStock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Stock_TccCancelDeductStock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StockServer).TccCancelDeductStock(ctx, req.(*TccCancelDeductStockReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Stock_ServiceDesc is the grpc.ServiceDesc for Stock service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -241,6 +349,18 @@ var Stock_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BatchQueryStock",
 			Handler:    _Stock_BatchQueryStock_Handler,
+		},
+		{
+			MethodName: "TccTryDeductStock",
+			Handler:    _Stock_TccTryDeductStock_Handler,
+		},
+		{
+			MethodName: "TccConfirmDeductStock",
+			Handler:    _Stock_TccConfirmDeductStock_Handler,
+		},
+		{
+			MethodName: "TccCancelDeductStock",
+			Handler:    _Stock_TccCancelDeductStock_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

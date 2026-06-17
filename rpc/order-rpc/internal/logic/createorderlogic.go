@@ -40,7 +40,7 @@ func (l *CreateOrderLogic) CreateOrder(in *order.CreateOrderReq) (*order.CreateO
 		}
 		//写日志
 		var newSage = commodel.SagaGlobalTransaction{}
-		newSage.Xid = in.Gid
+		newSage.Xid = in.Xid
 		newSage.Status = commodel.SagaGlobalTransactionStatusRunning
 		newSage.GmtCreate = time.Now()
 		newSage.TransactionName = in.TransType

@@ -7,11 +7,20 @@ import (
 	"gorm.io/gorm"
 )
 
+// 订单状态常量
+const (
+	OrderStateCancelled    int32 = -1 // 已取消
+	OrderStatePending      int32 = 0  // 待支付
+	OrderStatePaid         int32 = 1  // 已支付
+	OrderStateFinished     int32 = 2  // 已完成
+	OrderStateTccReserving int32 = -2 // TCC Try 预留中
+)
+
 /*
 CREATE TABLE `order_info` (
     `order_id`         BIGINT NOT NULL AUTO_INCREMENT COMMENT '订单ID（主键）',
     `order_no`         VARCHAR(64) NOT NULL COMMENT '订单号（唯一索引）',
-    `order_state`      INT NOT NULL DEFAULT 0 COMMENT '订单状态：-1-已取消, 0-待支付, 1-已支付, 2-已完成',
+    `order_state`      INT NOT NULL DEFAULT 0 COMMENT '订单状态：-2-TCC预留中, -1-已取消, 0-待支付, 1-已支付, 2-已完成',
     `user_id`          BIGINT NOT NULL COMMENT '用户ID',
     `order_price`      BIGINT NOT NULL DEFAULT 0 COMMENT '订单金额（单位：分）',
     `order_des`        VARCHAR(255) NOT NULL DEFAULT '' COMMENT '订单描述',
@@ -59,6 +68,10 @@ func NewOrderRepo(db *gorm.DB) *OrderRepo {
 	return &OrderRepo{db: db}
 }
 
+func (r *OrderRepo) Transaction(fc func(tx *gorm.DB) error) error {
+	return r.db.Transaction(fc)
+}
+
 // 根据xid 查询订单
 func (r *OrderRepo) FindByXid(ctx context.Context, xid string) (*Order, error) {
 	var order Order
@@ -99,6 +112,16 @@ func (r *OrderRepo) UpdateState(ctx context.Context, orderId int64, state int32)
 	return r.db.WithContext(ctx).Model(&Order{}).
 		Where("order_id = ?", orderId).
 		Update("order_state", state).Error
+}
+
+// UpdateStateByXid 根据全局事务 xid 更新订单状态（用于 TCC Confirm / Cancel）
+func (r *OrderRepo) UpdateStateByXid(ctx context.Context, xid string, state int32) error {
+	return r.db.WithContext(ctx).Model(&Order{}).
+		Where("xid = ?", xid).
+		Updates(map[string]interface{}{
+			"order_state": state,
+			"updated_at":  time.Now().UnixMilli(),
+		}).Error
 }
 
 // CancelOrder 取消订单（更新状态为已取消）

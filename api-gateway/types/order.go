@@ -33,13 +33,13 @@ func (r *OrderStateCheckReq) ToRPC() *orderpb.OrderStateCheckReq {
 // CreateOrderReq 创建订单请求
 type CreateOrderReq struct {
 	UserID         int64  `json:"user_id" binding:"required,min=1"`
-	OrderNo        string `json:"order_no" binding:"required"`
+	OrderNo        string `json:"order_no"` // 可选：后端未生成时由前端传入
 	OrderPrice     int64  `json:"order_price" binding:"required"`
 	OrderDes       string `json:"order_des"`
 	OrderBeginTime int64  `json:"order_begin_time" binding:"required"`
 	OrderEndTime   int64  `json:"order_end_time" binding:"required"`
-	SkuId          int64  `json:"sku_id" binding:"required,min=1"`   // 商品 SKU ID（用于 Saga 扣减库存）
-	Quantity       int64  `json:"quantity" binding:"required,min=1"` // 商品数量（用于 Saga 扣减库存）
+	SkuId          int64  `json:"sku_id" binding:"required,min=1"`   // 商品 SKU ID
+	Quantity       int64  `json:"quantity" binding:"required,min=1"` // 商品数量
 }
 
 func (r *CreateOrderReq) ToRPC() *orderpb.CreateOrderReq {

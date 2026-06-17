@@ -23,6 +23,12 @@ type (
 	OrderCommon         = order.OrderCommon
 	OrderStateCheckReq  = order.OrderStateCheckReq
 	OrderStateCheckResp = order.OrderStateCheckResp
+	TccCancelOrderReq   = order.TccCancelOrderReq
+	TccCancelOrderResp  = order.TccCancelOrderResp
+	TccConfirmOrderReq  = order.TccConfirmOrderReq
+	TccConfirmOrderResp = order.TccConfirmOrderResp
+	TccTryOrderReq      = order.TccTryOrderReq
+	TccTryOrderResp     = order.TccTryOrderResp
 
 	Order interface {
 		// 订单支付提交
@@ -33,6 +39,12 @@ type (
 		CreateOrder(ctx context.Context, in *CreateOrderReq, opts ...grpc.CallOption) (*CreateOrderRsp, error)
 		// 取消订单
 		CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*CancelOrderRsp, error)
+		// TCC Try：预留订单资源（由业务方/编排层在 Try 阶段调用）
+		TccTryOrder(ctx context.Context, in *TccTryOrderReq, opts ...grpc.CallOption) (*TccTryOrderResp, error)
+		// TCC Confirm：确认订单（由 DTM 在 Confirm 阶段回调）
+		TccConfirmOrder(ctx context.Context, in *TccConfirmOrderReq, opts ...grpc.CallOption) (*TccConfirmOrderResp, error)
+		// TCC Cancel：回滚订单（由 DTM 在 Cancel 阶段回调）
+		TccCancelOrder(ctx context.Context, in *TccCancelOrderReq, opts ...grpc.CallOption) (*TccCancelOrderResp, error)
 	}
 
 	defaultOrder struct {
@@ -68,4 +80,22 @@ func (m *defaultOrder) CreateOrder(ctx context.Context, in *CreateOrderReq, opts
 func (m *defaultOrder) CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*CancelOrderRsp, error) {
 	client := order.NewOrderClient(m.cli.Conn())
 	return client.CancelOrder(ctx, in, opts...)
+}
+
+// TCC Try：预留订单资源（由业务方/编排层在 Try 阶段调用）
+func (m *defaultOrder) TccTryOrder(ctx context.Context, in *TccTryOrderReq, opts ...grpc.CallOption) (*TccTryOrderResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.TccTryOrder(ctx, in, opts...)
+}
+
+// TCC Confirm：确认订单（由 DTM 在 Confirm 阶段回调）
+func (m *defaultOrder) TccConfirmOrder(ctx context.Context, in *TccConfirmOrderReq, opts ...grpc.CallOption) (*TccConfirmOrderResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.TccConfirmOrder(ctx, in, opts...)
+}
+
+// TCC Cancel：回滚订单（由 DTM 在 Cancel 阶段回调）
+func (m *defaultOrder) TccCancelOrder(ctx context.Context, in *TccCancelOrderReq, opts ...grpc.CallOption) (*TccCancelOrderResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.TccCancelOrder(ctx, in, opts...)
 }

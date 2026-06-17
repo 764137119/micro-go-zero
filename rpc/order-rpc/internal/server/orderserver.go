@@ -46,3 +46,21 @@ func (s *OrderServer) CancelOrder(ctx context.Context, in *order.CancelOrderReq)
 	l := logic.NewCancelOrderLogic(ctx, s.svcCtx)
 	return l.CancelOrder(in)
 }
+
+// TCC Try：预留订单资源（由业务方/编排层在 Try 阶段调用）
+func (s *OrderServer) TccTryOrder(ctx context.Context, in *order.TccTryOrderReq) (*order.TccTryOrderResp, error) {
+	l := logic.NewTccTryOrderLogic(ctx, s.svcCtx)
+	return l.TccTryOrder(in)
+}
+
+// TCC Confirm：确认订单（由 DTM 在 Confirm 阶段回调）
+func (s *OrderServer) TccConfirmOrder(ctx context.Context, in *order.TccConfirmOrderReq) (*order.TccConfirmOrderResp, error) {
+	l := logic.NewTccConfirmOrderLogic(ctx, s.svcCtx)
+	return l.TccConfirmOrder(in)
+}
+
+// TCC Cancel：回滚订单（由 DTM 在 Cancel 阶段回调）
+func (s *OrderServer) TccCancelOrder(ctx context.Context, in *order.TccCancelOrderReq) (*order.TccCancelOrderResp, error) {
+	l := logic.NewTccCancelOrderLogic(ctx, s.svcCtx)
+	return l.TccCancelOrder(in)
+}

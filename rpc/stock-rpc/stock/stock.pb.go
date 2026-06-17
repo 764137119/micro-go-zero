@@ -25,7 +25,7 @@ const (
 // Saga 正向：扣减库存请求（dtm Saga Action）
 type DeductStockReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Gid           string                 `protobuf:"bytes,1,opt,name=gid,proto3" json:"gid,omitempty"`             // dtm 全局事务 ID（用于幂等去重 + 子事务屏障）
+	Xid           string                 `protobuf:"bytes,1,opt,name=xid,proto3" json:"xid,omitempty"`             // dtm 全局事务 ID（用于幂等去重 + 子事务屏障）
 	TransType     string                 `protobuf:"bytes,2,opt,name=transType,proto3" json:"transType,omitempty"` // dtm 事务类型，固定为 "saga"
 	SkuId         int64                  `protobuf:"varint,3,opt,name=skuId,proto3" json:"skuId,omitempty"`        // 商品 SKU ID
 	Quantity      int64                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`  // 扣减数量
@@ -64,9 +64,9 @@ func (*DeductStockReq) Descriptor() ([]byte, []int) {
 	return file_stock_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *DeductStockReq) GetGid() string {
+func (x *DeductStockReq) GetXid() string {
 	if x != nil {
-		return x.Gid
+		return x.Xid
 	}
 	return ""
 }
@@ -102,7 +102,7 @@ func (x *DeductStockReq) GetOrderNo() string {
 // Saga 补偿：回滚库存请求（dtm Saga Compensate）
 type RollbackStockReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Gid           string                 `protobuf:"bytes,1,opt,name=gid,proto3" json:"gid,omitempty"`             // dtm 全局事务 ID
+	Xid           string                 `protobuf:"bytes,1,opt,name=xid,proto3" json:"xid,omitempty"`             // dtm 全局事务 ID
 	TransType     string                 `protobuf:"bytes,2,opt,name=transType,proto3" json:"transType,omitempty"` // dtm 事务类型，固定为 "saga"
 	SkuId         int64                  `protobuf:"varint,3,opt,name=skuId,proto3" json:"skuId,omitempty"`        // 商品 SKU ID
 	Quantity      int64                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`  // 回滚数量
@@ -141,9 +141,9 @@ func (*RollbackStockReq) Descriptor() ([]byte, []int) {
 	return file_stock_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *RollbackStockReq) GetGid() string {
+func (x *RollbackStockReq) GetXid() string {
 	if x != nil {
-		return x.Gid
+		return x.Xid
 	}
 	return ""
 }
@@ -425,19 +425,250 @@ func (x *BatchQueryStockResp) GetList() []*StockInfo {
 	return nil
 }
 
+// TCC Try：冻结库存请求（Phase 1 - 资源预留）
+type TccTryDeductStockReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Xid           string                 `protobuf:"bytes,1,opt,name=xid,proto3" json:"xid,omitempty"`             // dtm 全局事务 ID（用于幂等去重 + 子事务屏障）
+	TransType     string                 `protobuf:"bytes,2,opt,name=transType,proto3" json:"transType,omitempty"` // dtm 事务类型，固定为 "tcc"
+	SkuId         int64                  `protobuf:"varint,3,opt,name=skuId,proto3" json:"skuId,omitempty"`        // 商品 SKU ID
+	Quantity      int64                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`  // 冻结数量
+	OrderNo       string                 `protobuf:"bytes,5,opt,name=orderNo,proto3" json:"orderNo,omitempty"`     // 订单号（业务幂等键）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TccTryDeductStockReq) Reset() {
+	*x = TccTryDeductStockReq{}
+	mi := &file_stock_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TccTryDeductStockReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TccTryDeductStockReq) ProtoMessage() {}
+
+func (x *TccTryDeductStockReq) ProtoReflect() protoreflect.Message {
+	mi := &file_stock_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TccTryDeductStockReq.ProtoReflect.Descriptor instead.
+func (*TccTryDeductStockReq) Descriptor() ([]byte, []int) {
+	return file_stock_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *TccTryDeductStockReq) GetXid() string {
+	if x != nil {
+		return x.Xid
+	}
+	return ""
+}
+
+func (x *TccTryDeductStockReq) GetTransType() string {
+	if x != nil {
+		return x.TransType
+	}
+	return ""
+}
+
+func (x *TccTryDeductStockReq) GetSkuId() int64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *TccTryDeductStockReq) GetQuantity() int64 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *TccTryDeductStockReq) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+// TCC Confirm：确认扣减库存请求（Phase 2 - 提交，由 DTM 回调）
+type TccConfirmDeductStockReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Xid           string                 `protobuf:"bytes,1,opt,name=xid,proto3" json:"xid,omitempty"`             // dtm 全局事务 ID
+	TransType     string                 `protobuf:"bytes,2,opt,name=transType,proto3" json:"transType,omitempty"` // dtm 事务类型，固定为 "tcc"
+	SkuId         int64                  `protobuf:"varint,3,opt,name=skuId,proto3" json:"skuId,omitempty"`        // 商品 SKU ID
+	Quantity      int64                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`  // 扣减数量
+	OrderNo       string                 `protobuf:"bytes,5,opt,name=orderNo,proto3" json:"orderNo,omitempty"`     // 订单号
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TccConfirmDeductStockReq) Reset() {
+	*x = TccConfirmDeductStockReq{}
+	mi := &file_stock_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TccConfirmDeductStockReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TccConfirmDeductStockReq) ProtoMessage() {}
+
+func (x *TccConfirmDeductStockReq) ProtoReflect() protoreflect.Message {
+	mi := &file_stock_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TccConfirmDeductStockReq.ProtoReflect.Descriptor instead.
+func (*TccConfirmDeductStockReq) Descriptor() ([]byte, []int) {
+	return file_stock_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *TccConfirmDeductStockReq) GetXid() string {
+	if x != nil {
+		return x.Xid
+	}
+	return ""
+}
+
+func (x *TccConfirmDeductStockReq) GetTransType() string {
+	if x != nil {
+		return x.TransType
+	}
+	return ""
+}
+
+func (x *TccConfirmDeductStockReq) GetSkuId() int64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *TccConfirmDeductStockReq) GetQuantity() int64 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *TccConfirmDeductStockReq) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+// TCC Cancel：释放库存请求（Phase 2 - 回滚，由 DTM 回调）
+type TccCancelDeductStockReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Xid           string                 `protobuf:"bytes,1,opt,name=xid,proto3" json:"xid,omitempty"`             // dtm 全局事务 ID
+	TransType     string                 `protobuf:"bytes,2,opt,name=transType,proto3" json:"transType,omitempty"` // dtm 事务类型，固定为 "tcc"
+	SkuId         int64                  `protobuf:"varint,3,opt,name=skuId,proto3" json:"skuId,omitempty"`        // 商品 SKU ID
+	Quantity      int64                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`  // 释放数量
+	OrderNo       string                 `protobuf:"bytes,5,opt,name=orderNo,proto3" json:"orderNo,omitempty"`     // 订单号
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TccCancelDeductStockReq) Reset() {
+	*x = TccCancelDeductStockReq{}
+	mi := &file_stock_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TccCancelDeductStockReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TccCancelDeductStockReq) ProtoMessage() {}
+
+func (x *TccCancelDeductStockReq) ProtoReflect() protoreflect.Message {
+	mi := &file_stock_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TccCancelDeductStockReq.ProtoReflect.Descriptor instead.
+func (*TccCancelDeductStockReq) Descriptor() ([]byte, []int) {
+	return file_stock_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *TccCancelDeductStockReq) GetXid() string {
+	if x != nil {
+		return x.Xid
+	}
+	return ""
+}
+
+func (x *TccCancelDeductStockReq) GetTransType() string {
+	if x != nil {
+		return x.TransType
+	}
+	return ""
+}
+
+func (x *TccCancelDeductStockReq) GetSkuId() int64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *TccCancelDeductStockReq) GetQuantity() int64 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *TccCancelDeductStockReq) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
 var File_stock_proto protoreflect.FileDescriptor
 
 const file_stock_proto_rawDesc = "" +
 	"\n" +
 	"\vstock.proto\x12\x05stock\x1a\x1bgoogle/protobuf/empty.proto\"\x8c\x01\n" +
 	"\x0eDeductStockReq\x12\x10\n" +
-	"\x03gid\x18\x01 \x01(\tR\x03gid\x12\x1c\n" +
+	"\x03xid\x18\x01 \x01(\tR\x03xid\x12\x1c\n" +
 	"\ttransType\x18\x02 \x01(\tR\ttransType\x12\x14\n" +
 	"\x05skuId\x18\x03 \x01(\x03R\x05skuId\x12\x1a\n" +
 	"\bquantity\x18\x04 \x01(\x03R\bquantity\x12\x18\n" +
 	"\aorderNo\x18\x05 \x01(\tR\aorderNo\"\x8e\x01\n" +
 	"\x10RollbackStockReq\x12\x10\n" +
-	"\x03gid\x18\x01 \x01(\tR\x03gid\x12\x1c\n" +
+	"\x03xid\x18\x01 \x01(\tR\x03xid\x12\x1c\n" +
 	"\ttransType\x18\x02 \x01(\tR\ttransType\x12\x14\n" +
 	"\x05skuId\x18\x03 \x01(\x03R\x05skuId\x12\x1a\n" +
 	"\bquantity\x18\x04 \x01(\x03R\bquantity\x12\x18\n" +
@@ -456,13 +687,34 @@ const file_stock_proto_rawDesc = "" +
 	"\x12BatchQueryStockReq\x12\x16\n" +
 	"\x06skuIds\x18\x01 \x03(\x03R\x06skuIds\";\n" +
 	"\x13BatchQueryStockResp\x12$\n" +
-	"\x04list\x18\x01 \x03(\v2\x10.stock.StockInfoR\x04list2\x8c\x02\n" +
+	"\x04list\x18\x01 \x03(\v2\x10.stock.StockInfoR\x04list\"\x92\x01\n" +
+	"\x14TccTryDeductStockReq\x12\x10\n" +
+	"\x03xid\x18\x01 \x01(\tR\x03xid\x12\x1c\n" +
+	"\ttransType\x18\x02 \x01(\tR\ttransType\x12\x14\n" +
+	"\x05skuId\x18\x03 \x01(\x03R\x05skuId\x12\x1a\n" +
+	"\bquantity\x18\x04 \x01(\x03R\bquantity\x12\x18\n" +
+	"\aorderNo\x18\x05 \x01(\tR\aorderNo\"\x96\x01\n" +
+	"\x18TccConfirmDeductStockReq\x12\x10\n" +
+	"\x03xid\x18\x01 \x01(\tR\x03xid\x12\x1c\n" +
+	"\ttransType\x18\x02 \x01(\tR\ttransType\x12\x14\n" +
+	"\x05skuId\x18\x03 \x01(\x03R\x05skuId\x12\x1a\n" +
+	"\bquantity\x18\x04 \x01(\x03R\bquantity\x12\x18\n" +
+	"\aorderNo\x18\x05 \x01(\tR\aorderNo\"\x95\x01\n" +
+	"\x17TccCancelDeductStockReq\x12\x10\n" +
+	"\x03xid\x18\x01 \x01(\tR\x03xid\x12\x1c\n" +
+	"\ttransType\x18\x02 \x01(\tR\ttransType\x12\x14\n" +
+	"\x05skuId\x18\x03 \x01(\x03R\x05skuId\x12\x1a\n" +
+	"\bquantity\x18\x04 \x01(\x03R\bquantity\x12\x18\n" +
+	"\aorderNo\x18\x05 \x01(\tR\aorderNo2\xf8\x03\n" +
 	"\x05Stock\x12<\n" +
 	"\vDeductStock\x12\x15.stock.DeductStockReq\x1a\x16.google.protobuf.Empty\x12@\n" +
 	"\rRollbackStock\x12\x17.stock.RollbackStockReq\x1a\x16.google.protobuf.Empty\x129\n" +
 	"\n" +
 	"QueryStock\x12\x14.stock.QueryStockReq\x1a\x15.stock.QueryStockResp\x12H\n" +
-	"\x0fBatchQueryStock\x12\x19.stock.BatchQueryStockReq\x1a\x1a.stock.BatchQueryStockRespB\tZ\a./stockb\x06proto3"
+	"\x0fBatchQueryStock\x12\x19.stock.BatchQueryStockReq\x1a\x1a.stock.BatchQueryStockResp\x12H\n" +
+	"\x11TccTryDeductStock\x12\x1b.stock.TccTryDeductStockReq\x1a\x16.google.protobuf.Empty\x12P\n" +
+	"\x15TccConfirmDeductStock\x12\x1f.stock.TccConfirmDeductStockReq\x1a\x16.google.protobuf.Empty\x12N\n" +
+	"\x14TccCancelDeductStock\x12\x1e.stock.TccCancelDeductStockReq\x1a\x16.google.protobuf.EmptyB\tZ\a./stockb\x06proto3"
 
 var (
 	file_stock_proto_rawDescOnce sync.Once
@@ -476,33 +728,42 @@ func file_stock_proto_rawDescGZIP() []byte {
 	return file_stock_proto_rawDescData
 }
 
-var file_stock_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_stock_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_stock_proto_goTypes = []any{
-	(*DeductStockReq)(nil),      // 0: stock.DeductStockReq
-	(*RollbackStockReq)(nil),    // 1: stock.RollbackStockReq
-	(*QueryStockReq)(nil),       // 2: stock.QueryStockReq
-	(*StockInfo)(nil),           // 3: stock.StockInfo
-	(*QueryStockResp)(nil),      // 4: stock.QueryStockResp
-	(*BatchQueryStockReq)(nil),  // 5: stock.BatchQueryStockReq
-	(*BatchQueryStockResp)(nil), // 6: stock.BatchQueryStockResp
-	(*emptypb.Empty)(nil),       // 7: google.protobuf.Empty
+	(*DeductStockReq)(nil),           // 0: stock.DeductStockReq
+	(*RollbackStockReq)(nil),         // 1: stock.RollbackStockReq
+	(*QueryStockReq)(nil),            // 2: stock.QueryStockReq
+	(*StockInfo)(nil),                // 3: stock.StockInfo
+	(*QueryStockResp)(nil),           // 4: stock.QueryStockResp
+	(*BatchQueryStockReq)(nil),       // 5: stock.BatchQueryStockReq
+	(*BatchQueryStockResp)(nil),      // 6: stock.BatchQueryStockResp
+	(*TccTryDeductStockReq)(nil),     // 7: stock.TccTryDeductStockReq
+	(*TccConfirmDeductStockReq)(nil), // 8: stock.TccConfirmDeductStockReq
+	(*TccCancelDeductStockReq)(nil),  // 9: stock.TccCancelDeductStockReq
+	(*emptypb.Empty)(nil),            // 10: google.protobuf.Empty
 }
 var file_stock_proto_depIdxs = []int32{
-	3, // 0: stock.QueryStockResp.stockInfo:type_name -> stock.StockInfo
-	3, // 1: stock.BatchQueryStockResp.list:type_name -> stock.StockInfo
-	0, // 2: stock.Stock.DeductStock:input_type -> stock.DeductStockReq
-	1, // 3: stock.Stock.RollbackStock:input_type -> stock.RollbackStockReq
-	2, // 4: stock.Stock.QueryStock:input_type -> stock.QueryStockReq
-	5, // 5: stock.Stock.BatchQueryStock:input_type -> stock.BatchQueryStockReq
-	7, // 6: stock.Stock.DeductStock:output_type -> google.protobuf.Empty
-	7, // 7: stock.Stock.RollbackStock:output_type -> google.protobuf.Empty
-	4, // 8: stock.Stock.QueryStock:output_type -> stock.QueryStockResp
-	6, // 9: stock.Stock.BatchQueryStock:output_type -> stock.BatchQueryStockResp
-	6, // [6:10] is the sub-list for method output_type
-	2, // [2:6] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3,  // 0: stock.QueryStockResp.stockInfo:type_name -> stock.StockInfo
+	3,  // 1: stock.BatchQueryStockResp.list:type_name -> stock.StockInfo
+	0,  // 2: stock.Stock.DeductStock:input_type -> stock.DeductStockReq
+	1,  // 3: stock.Stock.RollbackStock:input_type -> stock.RollbackStockReq
+	2,  // 4: stock.Stock.QueryStock:input_type -> stock.QueryStockReq
+	5,  // 5: stock.Stock.BatchQueryStock:input_type -> stock.BatchQueryStockReq
+	7,  // 6: stock.Stock.TccTryDeductStock:input_type -> stock.TccTryDeductStockReq
+	8,  // 7: stock.Stock.TccConfirmDeductStock:input_type -> stock.TccConfirmDeductStockReq
+	9,  // 8: stock.Stock.TccCancelDeductStock:input_type -> stock.TccCancelDeductStockReq
+	10, // 9: stock.Stock.DeductStock:output_type -> google.protobuf.Empty
+	10, // 10: stock.Stock.RollbackStock:output_type -> google.protobuf.Empty
+	4,  // 11: stock.Stock.QueryStock:output_type -> stock.QueryStockResp
+	6,  // 12: stock.Stock.BatchQueryStock:output_type -> stock.BatchQueryStockResp
+	10, // 13: stock.Stock.TccTryDeductStock:output_type -> google.protobuf.Empty
+	10, // 14: stock.Stock.TccConfirmDeductStock:output_type -> google.protobuf.Empty
+	10, // 15: stock.Stock.TccCancelDeductStock:output_type -> google.protobuf.Empty
+	9,  // [9:16] is the sub-list for method output_type
+	2,  // [2:9] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_stock_proto_init() }
@@ -516,7 +777,7 @@ func file_stock_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_stock_proto_rawDesc), len(file_stock_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -43,7 +43,7 @@ message CreateOrderReq {
   int64 orderEndTime = 6;
   int64 skuId = 7;           // 商品 SKU ID（用于 Saga 扣减库存）
   int64 quantity = 8;        // 商品数量（用于 Saga 扣减库存）
-  string gid = 9;              // DTM 全局事务 ID（用于幂等去重 + 子事务屏障）
+  string xid = 9;              // DTM 全局事务 ID（用于幂等去重 + 子事务屏障）
   string transType = 10;       // DTM 事务类型，固定为 "saga"
 
 }
@@ -58,7 +58,7 @@ message CancelOrderReq {
   int64 OrderId = 1;
   int64 skuId = 2;           // 商品 SKU ID（用于 Saga 回滚库存）
   int64 quantity = 3;        // 商品数量（用于 Saga 回滚库存）
-  string gid = 4;              // DTM 全局事务 ID
+  string xid = 4;              // DTM 全局事务 ID
   string transType = 5;        // DTM 事务类型，固定为 "saga"
 
 }
@@ -66,6 +66,53 @@ message CancelOrderReq {
 // 取消订单响应
 message CancelOrderRsp {
   int64 OrderId = 1;
+}
+
+// ==================== TCC 分布式事务（dtm）接口 ====================
+
+// TCC Try：订单资源预留请求（Phase 1）
+message TccTryOrderReq {
+  int64 userId = 1;
+  string orderNo = 2;
+  int64 orderPrice = 3;
+  string orderDes = 4;
+  int64 orderBeginTime = 5;
+  int64 orderEndTime = 6;
+  int64 skuId = 7;           // 商品 SKU ID（Try 阶段冻结库存）
+  int64 quantity = 8;        // 商品数量
+  string xid = 9;            // DTM 全局事务 ID（用于幂等去重 + 子事务屏障）
+  string transType = 10;     // DTM 事务类型，固定为 "tcc"
+}
+
+// TCC Try：订单资源预留响应
+message TccTryOrderResp {
+  int64 orderId = 1;
+}
+
+// TCC Confirm：订单确认请求（Phase 2 - 提交，由 DTM 回调）
+message TccConfirmOrderReq {
+  int64 orderId = 1;
+  string xid = 2;            // DTM 全局事务 ID
+  string transType = 3;      // DTM 事务类型，固定为 "tcc"
+}
+
+// TCC Confirm：订单确认响应
+message TccConfirmOrderResp {
+ int64 orderId = 1;
+}
+
+// TCC Cancel：订单回滚请求（Phase 2 - 回滚，由 DTM 回调）
+message TccCancelOrderReq {
+  string orderNo = 1;
+  int64 skuId = 2;           // 商品 SKU ID（Cancel 释放库存）
+  int64 quantity = 3;        // 商品数量
+  string xid = 4;            // DTM 全局事务 ID
+  string transType = 5;      // DTM 事务类型，固定为 "tcc"
+}
+
+// TCC Cancel：订单回滚响应
+message TccCancelOrderResp {
+ int64 orderId = 1;
 }
 
 // 订单服务
@@ -78,4 +125,10 @@ service Order {
   rpc CreateOrder(CreateOrderReq) returns (CreateOrderRsp);
   // 取消订单
   rpc CancelOrder(CancelOrderReq) returns (CancelOrderRsp);
+  // TCC Try：预留订单资源（由业务方/编排层在 Try 阶段调用）
+  rpc TccTryOrder(TccTryOrderReq) returns (TccTryOrderResp);
+  // TCC Confirm：确认订单（由 DTM 在 Confirm 阶段回调）
+  rpc TccConfirmOrder(TccConfirmOrderReq) returns (TccConfirmOrderResp);
+  // TCC Cancel：回滚订单（由 DTM 在 Cancel 阶段回调）
+  rpc TccCancelOrder(TccCancelOrderReq) returns (TccCancelOrderResp);
 }
