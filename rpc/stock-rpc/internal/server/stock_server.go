@@ -24,24 +24,6 @@ func NewStockServer(svcCtx *svc.ServiceContext) *StockServer {
 	}
 }
 
-// Saga 正向：扣减库存（dtm Saga 全局事务中调用的 Action 分支）
-func (s *StockServer) DeductStock(ctx context.Context, in *stock.DeductStockReq) (*emptypb.Empty, error) {
-	l := logic.NewDeductStockLogic(ctx, s.svcCtx)
-	return l.DeductStock(in)
-}
-
-// Saga 补偿：回滚库存（dtm Saga 全局事务失败时调用的 Compensate 分支）
-func (s *StockServer) RollbackStock(ctx context.Context, in *stock.RollbackStockReq) (*emptypb.Empty, error) {
-	l := logic.NewRollbackStockLogic(ctx, s.svcCtx)
-	return l.RollbackStock(in)
-}
-
-// 查询单个商品库存
-func (s *StockServer) QueryStock(ctx context.Context, in *stock.QueryStockReq) (*stock.QueryStockResp, error) {
-	l := logic.NewQueryStockLogic(ctx, s.svcCtx)
-	return l.QueryStock(in)
-}
-
 // 批量查询商品库存
 func (s *StockServer) BatchQueryStock(ctx context.Context, in *stock.BatchQueryStockReq) (*stock.BatchQueryStockResp, error) {
 	l := logic.NewBatchQueryStockLogic(ctx, s.svcCtx)

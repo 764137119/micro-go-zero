@@ -22,160 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Saga 正向：扣减库存请求（dtm Saga Action）
-type DeductStockReq struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Xid           string                 `protobuf:"bytes,1,opt,name=xid,proto3" json:"xid,omitempty"`             // dtm 全局事务 ID（用于幂等去重 + 子事务屏障）
-	TransType     string                 `protobuf:"bytes,2,opt,name=transType,proto3" json:"transType,omitempty"` // dtm 事务类型，固定为 "saga"
-	SkuId         int64                  `protobuf:"varint,3,opt,name=skuId,proto3" json:"skuId,omitempty"`        // 商品 SKU ID
-	Quantity      int64                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`  // 扣减数量
-	OrderNo       string                 `protobuf:"bytes,5,opt,name=orderNo,proto3" json:"orderNo,omitempty"`     // 订单号（业务幂等键）
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DeductStockReq) Reset() {
-	*x = DeductStockReq{}
-	mi := &file_stock_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DeductStockReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DeductStockReq) ProtoMessage() {}
-
-func (x *DeductStockReq) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DeductStockReq.ProtoReflect.Descriptor instead.
-func (*DeductStockReq) Descriptor() ([]byte, []int) {
-	return file_stock_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *DeductStockReq) GetXid() string {
-	if x != nil {
-		return x.Xid
-	}
-	return ""
-}
-
-func (x *DeductStockReq) GetTransType() string {
-	if x != nil {
-		return x.TransType
-	}
-	return ""
-}
-
-func (x *DeductStockReq) GetSkuId() int64 {
-	if x != nil {
-		return x.SkuId
-	}
-	return 0
-}
-
-func (x *DeductStockReq) GetQuantity() int64 {
-	if x != nil {
-		return x.Quantity
-	}
-	return 0
-}
-
-func (x *DeductStockReq) GetOrderNo() string {
-	if x != nil {
-		return x.OrderNo
-	}
-	return ""
-}
-
-// Saga 补偿：回滚库存请求（dtm Saga Compensate）
-type RollbackStockReq struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Xid           string                 `protobuf:"bytes,1,opt,name=xid,proto3" json:"xid,omitempty"`             // dtm 全局事务 ID
-	TransType     string                 `protobuf:"bytes,2,opt,name=transType,proto3" json:"transType,omitempty"` // dtm 事务类型，固定为 "saga"
-	SkuId         int64                  `protobuf:"varint,3,opt,name=skuId,proto3" json:"skuId,omitempty"`        // 商品 SKU ID
-	Quantity      int64                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`  // 回滚数量
-	OrderNo       string                 `protobuf:"bytes,5,opt,name=orderNo,proto3" json:"orderNo,omitempty"`     // 订单号
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RollbackStockReq) Reset() {
-	*x = RollbackStockReq{}
-	mi := &file_stock_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RollbackStockReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RollbackStockReq) ProtoMessage() {}
-
-func (x *RollbackStockReq) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RollbackStockReq.ProtoReflect.Descriptor instead.
-func (*RollbackStockReq) Descriptor() ([]byte, []int) {
-	return file_stock_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *RollbackStockReq) GetXid() string {
-	if x != nil {
-		return x.Xid
-	}
-	return ""
-}
-
-func (x *RollbackStockReq) GetTransType() string {
-	if x != nil {
-		return x.TransType
-	}
-	return ""
-}
-
-func (x *RollbackStockReq) GetSkuId() int64 {
-	if x != nil {
-		return x.SkuId
-	}
-	return 0
-}
-
-func (x *RollbackStockReq) GetQuantity() int64 {
-	if x != nil {
-		return x.Quantity
-	}
-	return 0
-}
-
-func (x *RollbackStockReq) GetOrderNo() string {
-	if x != nil {
-		return x.OrderNo
-	}
-	return ""
-}
-
 // 查询单个商品库存请求
 type QueryStockReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -186,7 +32,7 @@ type QueryStockReq struct {
 
 func (x *QueryStockReq) Reset() {
 	*x = QueryStockReq{}
-	mi := &file_stock_proto_msgTypes[2]
+	mi := &file_stock_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -198,7 +44,7 @@ func (x *QueryStockReq) String() string {
 func (*QueryStockReq) ProtoMessage() {}
 
 func (x *QueryStockReq) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_proto_msgTypes[2]
+	mi := &file_stock_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -211,7 +57,7 @@ func (x *QueryStockReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryStockReq.ProtoReflect.Descriptor instead.
 func (*QueryStockReq) Descriptor() ([]byte, []int) {
-	return file_stock_proto_rawDescGZIP(), []int{2}
+	return file_stock_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *QueryStockReq) GetSkuId() int64 {
@@ -234,7 +80,7 @@ type StockInfo struct {
 
 func (x *StockInfo) Reset() {
 	*x = StockInfo{}
-	mi := &file_stock_proto_msgTypes[3]
+	mi := &file_stock_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -246,7 +92,7 @@ func (x *StockInfo) String() string {
 func (*StockInfo) ProtoMessage() {}
 
 func (x *StockInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_proto_msgTypes[3]
+	mi := &file_stock_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -259,7 +105,7 @@ func (x *StockInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StockInfo.ProtoReflect.Descriptor instead.
 func (*StockInfo) Descriptor() ([]byte, []int) {
-	return file_stock_proto_rawDescGZIP(), []int{3}
+	return file_stock_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *StockInfo) GetSkuId() int64 {
@@ -300,7 +146,7 @@ type QueryStockResp struct {
 
 func (x *QueryStockResp) Reset() {
 	*x = QueryStockResp{}
-	mi := &file_stock_proto_msgTypes[4]
+	mi := &file_stock_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -312,7 +158,7 @@ func (x *QueryStockResp) String() string {
 func (*QueryStockResp) ProtoMessage() {}
 
 func (x *QueryStockResp) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_proto_msgTypes[4]
+	mi := &file_stock_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -325,7 +171,7 @@ func (x *QueryStockResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryStockResp.ProtoReflect.Descriptor instead.
 func (*QueryStockResp) Descriptor() ([]byte, []int) {
-	return file_stock_proto_rawDescGZIP(), []int{4}
+	return file_stock_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *QueryStockResp) GetStockInfo() *StockInfo {
@@ -345,7 +191,7 @@ type BatchQueryStockReq struct {
 
 func (x *BatchQueryStockReq) Reset() {
 	*x = BatchQueryStockReq{}
-	mi := &file_stock_proto_msgTypes[5]
+	mi := &file_stock_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -357,7 +203,7 @@ func (x *BatchQueryStockReq) String() string {
 func (*BatchQueryStockReq) ProtoMessage() {}
 
 func (x *BatchQueryStockReq) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_proto_msgTypes[5]
+	mi := &file_stock_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -370,7 +216,7 @@ func (x *BatchQueryStockReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchQueryStockReq.ProtoReflect.Descriptor instead.
 func (*BatchQueryStockReq) Descriptor() ([]byte, []int) {
-	return file_stock_proto_rawDescGZIP(), []int{5}
+	return file_stock_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *BatchQueryStockReq) GetSkuIds() []int64 {
@@ -390,7 +236,7 @@ type BatchQueryStockResp struct {
 
 func (x *BatchQueryStockResp) Reset() {
 	*x = BatchQueryStockResp{}
-	mi := &file_stock_proto_msgTypes[6]
+	mi := &file_stock_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -402,7 +248,7 @@ func (x *BatchQueryStockResp) String() string {
 func (*BatchQueryStockResp) ProtoMessage() {}
 
 func (x *BatchQueryStockResp) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_proto_msgTypes[6]
+	mi := &file_stock_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -415,7 +261,7 @@ func (x *BatchQueryStockResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchQueryStockResp.ProtoReflect.Descriptor instead.
 func (*BatchQueryStockResp) Descriptor() ([]byte, []int) {
-	return file_stock_proto_rawDescGZIP(), []int{6}
+	return file_stock_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *BatchQueryStockResp) GetList() []*StockInfo {
@@ -439,7 +285,7 @@ type TccTryDeductStockReq struct {
 
 func (x *TccTryDeductStockReq) Reset() {
 	*x = TccTryDeductStockReq{}
-	mi := &file_stock_proto_msgTypes[7]
+	mi := &file_stock_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -451,7 +297,7 @@ func (x *TccTryDeductStockReq) String() string {
 func (*TccTryDeductStockReq) ProtoMessage() {}
 
 func (x *TccTryDeductStockReq) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_proto_msgTypes[7]
+	mi := &file_stock_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -464,7 +310,7 @@ func (x *TccTryDeductStockReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TccTryDeductStockReq.ProtoReflect.Descriptor instead.
 func (*TccTryDeductStockReq) Descriptor() ([]byte, []int) {
-	return file_stock_proto_rawDescGZIP(), []int{7}
+	return file_stock_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TccTryDeductStockReq) GetXid() string {
@@ -516,7 +362,7 @@ type TccConfirmDeductStockReq struct {
 
 func (x *TccConfirmDeductStockReq) Reset() {
 	*x = TccConfirmDeductStockReq{}
-	mi := &file_stock_proto_msgTypes[8]
+	mi := &file_stock_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -528,7 +374,7 @@ func (x *TccConfirmDeductStockReq) String() string {
 func (*TccConfirmDeductStockReq) ProtoMessage() {}
 
 func (x *TccConfirmDeductStockReq) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_proto_msgTypes[8]
+	mi := &file_stock_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -541,7 +387,7 @@ func (x *TccConfirmDeductStockReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TccConfirmDeductStockReq.ProtoReflect.Descriptor instead.
 func (*TccConfirmDeductStockReq) Descriptor() ([]byte, []int) {
-	return file_stock_proto_rawDescGZIP(), []int{8}
+	return file_stock_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *TccConfirmDeductStockReq) GetXid() string {
@@ -593,7 +439,7 @@ type TccCancelDeductStockReq struct {
 
 func (x *TccCancelDeductStockReq) Reset() {
 	*x = TccCancelDeductStockReq{}
-	mi := &file_stock_proto_msgTypes[9]
+	mi := &file_stock_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -605,7 +451,7 @@ func (x *TccCancelDeductStockReq) String() string {
 func (*TccCancelDeductStockReq) ProtoMessage() {}
 
 func (x *TccCancelDeductStockReq) ProtoReflect() protoreflect.Message {
-	mi := &file_stock_proto_msgTypes[9]
+	mi := &file_stock_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -618,7 +464,7 @@ func (x *TccCancelDeductStockReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TccCancelDeductStockReq.ProtoReflect.Descriptor instead.
 func (*TccCancelDeductStockReq) Descriptor() ([]byte, []int) {
-	return file_stock_proto_rawDescGZIP(), []int{9}
+	return file_stock_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *TccCancelDeductStockReq) GetXid() string {
@@ -660,19 +506,7 @@ var File_stock_proto protoreflect.FileDescriptor
 
 const file_stock_proto_rawDesc = "" +
 	"\n" +
-	"\vstock.proto\x12\x05stock\x1a\x1bgoogle/protobuf/empty.proto\"\x8c\x01\n" +
-	"\x0eDeductStockReq\x12\x10\n" +
-	"\x03xid\x18\x01 \x01(\tR\x03xid\x12\x1c\n" +
-	"\ttransType\x18\x02 \x01(\tR\ttransType\x12\x14\n" +
-	"\x05skuId\x18\x03 \x01(\x03R\x05skuId\x12\x1a\n" +
-	"\bquantity\x18\x04 \x01(\x03R\bquantity\x12\x18\n" +
-	"\aorderNo\x18\x05 \x01(\tR\aorderNo\"\x8e\x01\n" +
-	"\x10RollbackStockReq\x12\x10\n" +
-	"\x03xid\x18\x01 \x01(\tR\x03xid\x12\x1c\n" +
-	"\ttransType\x18\x02 \x01(\tR\ttransType\x12\x14\n" +
-	"\x05skuId\x18\x03 \x01(\x03R\x05skuId\x12\x1a\n" +
-	"\bquantity\x18\x04 \x01(\x03R\bquantity\x12\x18\n" +
-	"\aorderNo\x18\x05 \x01(\tR\aorderNo\"%\n" +
+	"\vstock.proto\x12\x05stock\x1a\x1bgoogle/protobuf/empty.proto\"%\n" +
 	"\rQueryStockReq\x12\x14\n" +
 	"\x05skuId\x18\x01 \x01(\x03R\x05skuId\"\x8b\x01\n" +
 	"\tStockInfo\x12\x14\n" +
@@ -705,12 +539,8 @@ const file_stock_proto_rawDesc = "" +
 	"\ttransType\x18\x02 \x01(\tR\ttransType\x12\x14\n" +
 	"\x05skuId\x18\x03 \x01(\x03R\x05skuId\x12\x1a\n" +
 	"\bquantity\x18\x04 \x01(\x03R\bquantity\x12\x18\n" +
-	"\aorderNo\x18\x05 \x01(\tR\aorderNo2\xf8\x03\n" +
-	"\x05Stock\x12<\n" +
-	"\vDeductStock\x12\x15.stock.DeductStockReq\x1a\x16.google.protobuf.Empty\x12@\n" +
-	"\rRollbackStock\x12\x17.stock.RollbackStockReq\x1a\x16.google.protobuf.Empty\x129\n" +
-	"\n" +
-	"QueryStock\x12\x14.stock.QueryStockReq\x1a\x15.stock.QueryStockResp\x12H\n" +
+	"\aorderNo\x18\x05 \x01(\tR\aorderNo2\xbd\x02\n" +
+	"\x05Stock\x12H\n" +
 	"\x0fBatchQueryStock\x12\x19.stock.BatchQueryStockReq\x1a\x1a.stock.BatchQueryStockResp\x12H\n" +
 	"\x11TccTryDeductStock\x12\x1b.stock.TccTryDeductStockReq\x1a\x16.google.protobuf.Empty\x12P\n" +
 	"\x15TccConfirmDeductStock\x12\x1f.stock.TccConfirmDeductStockReq\x1a\x16.google.protobuf.Empty\x12N\n" +
@@ -728,42 +558,34 @@ func file_stock_proto_rawDescGZIP() []byte {
 	return file_stock_proto_rawDescData
 }
 
-var file_stock_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_stock_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_stock_proto_goTypes = []any{
-	(*DeductStockReq)(nil),           // 0: stock.DeductStockReq
-	(*RollbackStockReq)(nil),         // 1: stock.RollbackStockReq
-	(*QueryStockReq)(nil),            // 2: stock.QueryStockReq
-	(*StockInfo)(nil),                // 3: stock.StockInfo
-	(*QueryStockResp)(nil),           // 4: stock.QueryStockResp
-	(*BatchQueryStockReq)(nil),       // 5: stock.BatchQueryStockReq
-	(*BatchQueryStockResp)(nil),      // 6: stock.BatchQueryStockResp
-	(*TccTryDeductStockReq)(nil),     // 7: stock.TccTryDeductStockReq
-	(*TccConfirmDeductStockReq)(nil), // 8: stock.TccConfirmDeductStockReq
-	(*TccCancelDeductStockReq)(nil),  // 9: stock.TccCancelDeductStockReq
-	(*emptypb.Empty)(nil),            // 10: google.protobuf.Empty
+	(*QueryStockReq)(nil),            // 0: stock.QueryStockReq
+	(*StockInfo)(nil),                // 1: stock.StockInfo
+	(*QueryStockResp)(nil),           // 2: stock.QueryStockResp
+	(*BatchQueryStockReq)(nil),       // 3: stock.BatchQueryStockReq
+	(*BatchQueryStockResp)(nil),      // 4: stock.BatchQueryStockResp
+	(*TccTryDeductStockReq)(nil),     // 5: stock.TccTryDeductStockReq
+	(*TccConfirmDeductStockReq)(nil), // 6: stock.TccConfirmDeductStockReq
+	(*TccCancelDeductStockReq)(nil),  // 7: stock.TccCancelDeductStockReq
+	(*emptypb.Empty)(nil),            // 8: google.protobuf.Empty
 }
 var file_stock_proto_depIdxs = []int32{
-	3,  // 0: stock.QueryStockResp.stockInfo:type_name -> stock.StockInfo
-	3,  // 1: stock.BatchQueryStockResp.list:type_name -> stock.StockInfo
-	0,  // 2: stock.Stock.DeductStock:input_type -> stock.DeductStockReq
-	1,  // 3: stock.Stock.RollbackStock:input_type -> stock.RollbackStockReq
-	2,  // 4: stock.Stock.QueryStock:input_type -> stock.QueryStockReq
-	5,  // 5: stock.Stock.BatchQueryStock:input_type -> stock.BatchQueryStockReq
-	7,  // 6: stock.Stock.TccTryDeductStock:input_type -> stock.TccTryDeductStockReq
-	8,  // 7: stock.Stock.TccConfirmDeductStock:input_type -> stock.TccConfirmDeductStockReq
-	9,  // 8: stock.Stock.TccCancelDeductStock:input_type -> stock.TccCancelDeductStockReq
-	10, // 9: stock.Stock.DeductStock:output_type -> google.protobuf.Empty
-	10, // 10: stock.Stock.RollbackStock:output_type -> google.protobuf.Empty
-	4,  // 11: stock.Stock.QueryStock:output_type -> stock.QueryStockResp
-	6,  // 12: stock.Stock.BatchQueryStock:output_type -> stock.BatchQueryStockResp
-	10, // 13: stock.Stock.TccTryDeductStock:output_type -> google.protobuf.Empty
-	10, // 14: stock.Stock.TccConfirmDeductStock:output_type -> google.protobuf.Empty
-	10, // 15: stock.Stock.TccCancelDeductStock:output_type -> google.protobuf.Empty
-	9,  // [9:16] is the sub-list for method output_type
-	2,  // [2:9] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	1, // 0: stock.QueryStockResp.stockInfo:type_name -> stock.StockInfo
+	1, // 1: stock.BatchQueryStockResp.list:type_name -> stock.StockInfo
+	3, // 2: stock.Stock.BatchQueryStock:input_type -> stock.BatchQueryStockReq
+	5, // 3: stock.Stock.TccTryDeductStock:input_type -> stock.TccTryDeductStockReq
+	6, // 4: stock.Stock.TccConfirmDeductStock:input_type -> stock.TccConfirmDeductStockReq
+	7, // 5: stock.Stock.TccCancelDeductStock:input_type -> stock.TccCancelDeductStockReq
+	4, // 6: stock.Stock.BatchQueryStock:output_type -> stock.BatchQueryStockResp
+	8, // 7: stock.Stock.TccTryDeductStock:output_type -> google.protobuf.Empty
+	8, // 8: stock.Stock.TccConfirmDeductStock:output_type -> google.protobuf.Empty
+	8, // 9: stock.Stock.TccCancelDeductStock:output_type -> google.protobuf.Empty
+	6, // [6:10] is the sub-list for method output_type
+	2, // [2:6] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_stock_proto_init() }
@@ -777,7 +599,7 @@ func file_stock_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_stock_proto_rawDesc), len(file_stock_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
