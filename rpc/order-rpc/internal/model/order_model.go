@@ -41,6 +41,7 @@ type Order struct {
 	Quantity       int64  `gorm:"column:quantity;type:bigint;not null;default:0"`                     // 商品数量
 	CreatedAt      int64  `gorm:"column:created_at;autoCreateTime;milli"`                             // 创建时间（毫秒时间戳）
 	UpdatedAt      int64  `gorm:"column:updated_at;autoUpdateTime;milli"`                             // 更新时间（毫秒时间戳）
+	Xid            string `gorm:"primaryKey;column:xid;type:varchar(64);not null"`                    // 全局事务ID，唯一标识一个Saga事务
 }
 
 // TableName 自定义表名
@@ -56,6 +57,16 @@ type OrderRepo struct {
 // NewOrderRepo 创建订单仓储
 func NewOrderRepo(db *gorm.DB) *OrderRepo {
 	return &OrderRepo{db: db}
+}
+
+// 根据xid 查询订单
+func (r *OrderRepo) FindByXid(ctx context.Context, xid string) (*Order, error) {
+	var order Order
+	err := r.db.WithContext(ctx).Where("xid=?", xid).First(&order).Error
+	if err != nil {
+		return nil, err
+	}
+	return &order, nil
 }
 
 // Create 创建订单
