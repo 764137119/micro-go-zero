@@ -5,7 +5,7 @@ dtm+go-zero
 
 ## 当前架构总结
 
-![当前架构图](static/image/tongyi-mermaid-2026-06-16-175237.png)
+
 
 ## 新功能开发流程
 
@@ -44,9 +44,12 @@ dtm+go-zero
 
 ### 二、整体架构
 
-![整体架构图](static/image/tongyi-mermaid-2026-06-16-175329.png)
+
 
 ### 三、核心流程（Saga 编排）
+![整体架构图](static/image/tongyi-mermaid-2026-06-16-175329.png)
+
+### TCC 流程
 
 ![Saga 流程图](static/image/tongyi-mermaid-2026-06-16-175339.png)
 
