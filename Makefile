@@ -42,7 +42,7 @@ commit:
 	else \
 		input_msg="$(msg)"; \
 	fi; \
-	git add . && git commit -m "$$input_msg" && git push 
+	git add . && git commit -m "$$input_msg" && all_proxy=socks5://127.0.0.1:56666 git push
 
 # 项目根目录的 Makefile
 

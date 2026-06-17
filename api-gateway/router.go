@@ -11,6 +11,7 @@ import (
 func RegisterRoutes(r *gin.Engine, svcCtx *svc.ServiceContext) {
 	// 全局中间件
 	r.Use(middleware.CORS())
+	r.Use(middleware.RequestIDMiddleware())
 
 	api := r.Group("/api/v1")
 	{
