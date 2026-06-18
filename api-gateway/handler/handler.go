@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"common/errors"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,7 +32,8 @@ func HandleJSON[Req any, Resp any](
 		}
 		resp, err := rpcFunc(c.Request.Context(), &req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			httpStatus := errors.GRPCStatusToHTTPCode(err)
+			c.JSON(httpStatus, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, resp)
@@ -49,7 +52,8 @@ func HandleQuery[Req any, Resp any](
 		}
 		resp, err := rpcFunc(c.Request.Context(), &req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			httpStatus := errors.GRPCStatusToHTTPCode(err)
+			c.JSON(httpStatus, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, resp)
