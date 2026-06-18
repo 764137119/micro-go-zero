@@ -78,6 +78,18 @@ services:
       - etcd
     restart: unless-stopped
 
+  # ===== 分布式定时任务调度服务 =====
+  cronjob-rpc:
+    build:
+      context: ./rpc/cronjob-rpc
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    depends_on:
+      - etcd
+      - mysql
+    restart: unless-stopped
+
   # ===== Gin API 网关（整合 user + order 接口）=====
   api-gateway:
     build:

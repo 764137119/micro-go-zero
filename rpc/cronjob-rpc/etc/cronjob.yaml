@@ -1,0 +1,12 @@
+Name: cronjob.rpc
+ListenOn: 0.0.0.0:8083
+Etcd:
+  Hosts:
+  - etcd:2379
+  Key: cronjob.rpc
+DB:
+  DataSource: root:root123@tcp(mysql:3306)/cronjob_db?charset=utf8mb4&parseTime=True&loc=Local
+Scheduler:
+  ScanIntervalSec: 5
+  LeaderTTLSec: 15
+  TaskLockTTLSec: 30

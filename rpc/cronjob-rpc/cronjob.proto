@@ -1,0 +1,190 @@
+syntax = "proto3";
+
+package cronjob;
+
+option go_package = "./cronjob";
+
+// ==================== 任务定义 ====================
+
+// 任务目标类型
+enum TargetType {
+  GRPC = 0;
+  HTTP = 1;
+}
+
+// 重试策略
+message RetryPolicy {
+  int32 maxRetries = 1;     // 最大重试次数
+  int32 intervalSec = 2;    // 重试间隔（秒）
+}
+
+// 注册任务请求
+message RegisterTaskReq {
+  string name = 1;             // 任务名称（唯一标识）
+  string cronExpr = 2;         // Cron 表达式
+  TargetType targetType = 3;   // 目标类型
+  string target = 4;           // 目标地址 (gRPC: "service/method" 或 HTTP: "http://host/path")
+  string requestBody = 5;      // 请求体 JSON
+  RetryPolicy retryPolicy = 6; // 重试策略
+  string description = 7;      // 描述
+}
+
+// 注册任务响应
+message RegisterTaskResp {
+  bool ok = 1;
+}
+
+// 注销任务请求
+message UnregisterTaskReq {
+  string name = 1;
+}
+
+// 注销任务响应
+message UnregisterTaskResp {
+  bool ok = 1;
+}
+
+// 任务状态
+enum TaskStatus {
+  TASK_DISABLED = 0;
+  TASK_ENABLED = 1;
+}
+
+// 任务信息
+message TaskInfo {
+  string name = 1;
+  string cronExpr = 2;
+  TargetType targetType = 3;
+  string target = 4;
+  string requestBody = 5;
+  RetryPolicy retryPolicy = 6;
+  string description = 7;
+  TaskStatus status = 8;
+  int64 createdAt = 9;
+  int64 updatedAt = 10;
+}
+
+// 列举任务请求
+message ListTasksReq {
+  int32 page = 1;
+  int32 pageSize = 2;
+}
+
+// 列举任务响应
+message ListTasksResp {
+  repeated TaskInfo tasks = 1;
+  int32 total = 2;
+}
+
+// ==================== 执行历史 ====================
+
+// 执行状态
+enum ExecStatus {
+  PENDING = 0;
+  RUNNING = 1;
+  SUCCESS = 2;
+  FAILED = 3;
+  RETRYING = 4;
+}
+
+// 执行记录
+message ExecutionRecord {
+  int64 id = 1;
+  string taskName = 2;
+  int64 scheduledAt = 3;
+  int64 startedAt = 4;
+  int64 finishedAt = 5;
+  ExecStatus status = 6;
+  int32 retryCount = 7;
+  int32 maxRetries = 8;
+  string result = 9;
+  string traceId = 10;
+  string execNode = 11;
+}
+
+// 列举执行历史请求
+message ListExecutionsReq {
+  string taskName = 1;
+  ExecStatus status = 2;
+  int32 page = 3;
+  int32 pageSize = 4;
+}
+
+// 列举执行历史响应
+message ListExecutionsResp {
+  repeated ExecutionRecord records = 1;
+  int32 total = 2;
+}
+
+// ==================== 任务操作 ====================
+
+// 手动触发执行请求
+message TriggerOnceReq {
+    int64 taskId=1;
+  string taskName = 2;
+}
+
+// 手动触发执行响应
+message TriggerOnceResp {
+  int64 executionId = 1;
+}
+
+// 重试任务请求
+message RetryTaskReq {
+  int64 executionId = 1;
+}
+
+// 重试任务响应
+message RetryTaskResp {
+  bool ok = 1;
+}
+
+// 设置任务启用/禁用请求
+message SetTaskEnabledReq {
+    int64 taskId=1;
+  string name = 2;
+  bool enabled = 3;
+}
+
+// 设置任务启用/禁用响应
+message SetTaskEnabledResp {
+  bool ok = 1;
+}
+
+// ==================== 任务监控 ====================
+
+// 任务统计请求
+message TaskStatsReq {
+  string taskName = 1;
+}
+
+// 任务统计响应
+message TaskStatsResp {
+  string taskName = 1;
+  int64 totalExecutions = 2;
+  int64 successCount = 3;
+  int64 failedCount = 4;
+  int64 runningCount = 5;
+  int64 lastExecutedAt = 6;
+  ExecStatus lastStatus = 7;
+}
+
+// ==================== RPC 服务定义 ====================
+
+service CronJob {
+  // 任务管理
+  rpc RegisterTask(RegisterTaskReq) returns (RegisterTaskResp);
+  rpc UnregisterTask(UnregisterTaskReq) returns (UnregisterTaskResp);
+  rpc ListTasks(ListTasksReq) returns (ListTasksResp);
+  rpc SetTaskEnabled(SetTaskEnabledReq) returns (SetTaskEnabledResp);
+
+  // 执行历史
+  rpc ListExecutions(ListExecutionsReq) returns (ListExecutionsResp);
+
+  // 任务操作
+  rpc TriggerOnce(TriggerOnceReq) returns (TriggerOnceResp);
+  rpc RetryTask(RetryTaskReq) returns (RetryTaskResp);
+
+  // 任务监控
+  rpc GetTaskStats(TaskStatsReq) returns (TaskStatsResp);
+}

@@ -51,7 +51,7 @@ GOCTL_HOME := .goctl
 # 代码生成（使用项目内自定义模板 + snake_case 文件名）
 .PHONY: gen gen-user gen-order gen-stock
 
-gen: gen-user gen-order gen-stock
+gen: gen-user gen-order gen-stock gen-cronjob
 	@echo "✅ 所有 RPC 代码生成完成"
 
 gen-user:
@@ -81,8 +81,17 @@ gen-stock:
 		--style=go_zero
 	@echo "✅ stock-rpc 生成完成"
 
+gen-cronjob:
+	@echo "🔨 生成 cronjob-rpc 代码..."
+	cd rpc/cronjob-rpc && goctl rpc protoc cronjob.proto \
+		--go_out=. --go-grpc_out=. \
+		--zrpc_out=. \
+		--home=$(abspath $(GOCTL_HOME)) \
+		--style=go_zero
+	@echo "✅ cronjob-rpc 生成完成"
+
 # 构建所有服务
-build-all: user-service order-service stock-service
+build-all: user-service order-service stock-service cronjob-service
 
 # 构建 user-service
 user-service:
@@ -95,4 +104,8 @@ order-service:
 # 构建 stock-service
 stock-service:
 	@cd stock-service && docker build -t stock-service:latest .
+
+# 构建 cronjob-service
+cronjob-service:
+	@cd rpc/cronjob-rpc && docker build -t cronjob-service:latest -f Dockerfile .
 

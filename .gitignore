@@ -6,3 +6,4 @@ stock-service
 rpc/user-rpc/user-rpc
 rpc/order-rpc/order-rpc
 rpc/stock-rpc/stock-rpc
+rpc/cronjob-rpc/cronjob-rpc
