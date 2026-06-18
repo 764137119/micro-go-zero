@@ -8,13 +8,6 @@ Etcd:
 # dtm 协调器地址（docker-compose 内网）
 DTM: http://dtm:36789
 
-# stock-rpc 客户端配置
-StockRpc:
-  Etcd:
-    Hosts:
-    - 127.0.0.1:2379
-    Key: stock.rpc
-
 # MySQL 数据库配置
 DB:
   DataSource: root:root123@tcp(mysql:3306)/order_db?charset=utf8mb4&parseTime=True&loc=Local

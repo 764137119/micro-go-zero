@@ -7,14 +7,10 @@ import (
 	commodel "common/model"
 	"order-rpc/internal/config"
 	"order-rpc/internal/model"
-	"stock-rpc/stock_client"
-
-	"github.com/zeromicro/go-zero/zrpc"
 )
 
 type ServiceContext struct {
 	Config                    config.Config
-	StockRpc                  stock_client.Stock
 	DTMEndpoint               string // dtm 协调器地址
 	OrderRepo                 *model.OrderRepo
 	SagaGlobalTransactionRepo *commodel.SagaGlobalTransactionRepo
@@ -33,7 +29,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	return &ServiceContext{
 		Config:                    c,
-		StockRpc:                  stock_client.NewStock(zrpc.MustNewClient(c.StockRpc)),
 		DTMEndpoint:               c.DTM,
 		OrderRepo:                 model.NewOrderRepo(db),
 		SagaGlobalTransactionRepo: commodel.NewSagaGlobalTransactionRepo(db),

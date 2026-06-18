@@ -30,8 +30,10 @@ CREATE TABLE `order_info` (
     `quantity`         BIGINT NOT NULL DEFAULT 0 COMMENT '商品数量',
     `created_at`       BIGINT NOT NULL COMMENT '创建时间（毫秒时间戳）',
     `updated_at`       BIGINT NOT NULL COMMENT '更新时间（毫秒时间戳）',
-    PRIMARY KEY (`order_id`),
+    `xid` VARCHAR(64) NOT NULL COMMENT'全局事务ID',
+	PRIMARY KEY (`order_id`),
     UNIQUE KEY `idx_order_no` (`order_no`),
+	UNIQUE KEY `idx_xid` (`xid`),
     KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单表';
 */
@@ -50,7 +52,7 @@ type Order struct {
 	Quantity       int64  `gorm:"column:quantity;type:bigint;not null;default:0"`                     // 商品数量
 	CreatedAt      int64  `gorm:"column:created_at;autoCreateTime;milli"`                             // 创建时间（毫秒时间戳）
 	UpdatedAt      int64  `gorm:"column:updated_at;autoUpdateTime;milli"`                             // 更新时间（毫秒时间戳）
-	Xid            string `gorm:"primaryKey;column:xid;type:varchar(64);not null"`                    // 全局事务ID，唯一标识一个Saga事务
+	Xid            string `gorm:"column:xid;type:varchar(64);not null;uniqueIndex:idx_xid"`           // 全局事务ID，唯一标识一个Saga事务
 }
 
 // TableName 自定义表名
@@ -89,8 +91,13 @@ func (r *OrderRepo) Create(ctx context.Context, order *Order) error {
 
 // FindByOrderId 根据订单ID查询
 func (r *OrderRepo) FindByOrderId(ctx context.Context, orderId int64) (*Order, error) {
+	return r.FindByOrderIdTx(r.db.WithContext(ctx), orderId)
+}
+
+// FindByOrderIdTx 在给定事务中根据订单ID查询
+func (r *OrderRepo) FindByOrderIdTx(tx *gorm.DB, orderId int64) (*Order, error) {
 	var order Order
-	err := r.db.WithContext(ctx).Where("order_id = ?", orderId).First(&order).Error
+	err := tx.Where("order_id = ?", orderId).First(&order).Error
 	if err != nil {
 		return nil, err
 	}

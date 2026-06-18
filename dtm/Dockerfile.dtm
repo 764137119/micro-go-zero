@@ -1,9 +1,5 @@
 # 使用官方 DTM 镜像（生产推荐）
+# 配置通过 docker-compose 环境变量注入（STORE=MYSQL, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD）
 FROM yedf/dtm:latest
 
-# 复制自定义配置（如需）
-COPY config.yml /dtm/config.yml
-
 EXPOSE 36789 36790
-
-CMD ["dtm", "-c=/dtm/config.yml"]

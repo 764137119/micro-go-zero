@@ -29,7 +29,8 @@ func NewTccTryOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *TccTr
 
 // TCC Try：预留订单资源（由业务方/编排层在 Try 阶段调用）
 func (l *TccTryOrderLogic) TccTryOrder(in *order.TccTryOrderReq) (*order.TccTryOrderResp, error) {
-	// todo: add your logic here and delete this line
+	// 捕获在事务内创建的 orderId，避免事务提交后二次查询
+	var createdOrderId int64
 
 	// 开启数据库事务
 	err := l.svcCtx.OrderRepo.Transaction(func(tx *gorm.DB) error {
@@ -48,7 +49,9 @@ func (l *TccTryOrderLogic) TccTryOrder(in *order.TccTryOrderReq) (*order.TccTryO
 		// 2. 如果插入失败（主键冲突），说明记录已存在，查询当前状态
 		if err != nil { // Duplicate key
 			var existing model.OrderTccControl
-			tx.Where("xid = ?", in.Xid).First(&existing)
+			if err := tx.Where("xid = ?", in.Xid).First(&existing).Error; err != nil {
+				return err
+			}
 
 			if existing.Status == "CANCELLED" {
 				// 【防悬挂】Cancel 比 Try 先到了，必须放弃本次Try，返回成功给协调者
@@ -73,24 +76,19 @@ func (l *TccTryOrderLogic) TccTryOrder(in *order.TccTryOrderReq) (*order.TccTryO
 			UserId:         in.UserId,
 			OrderPrice:     in.OrderPrice,
 			OrderDes:       in.OrderDes,
-			// ... 其他字段
-			Xid: in.Xid, // 注意：你的Order表有Xid字段，可以用来追溯，但不做控制用
+			Xid:            in.Xid,
 		}
 		if err := tx.Create(order).Error; err != nil {
 			return err // 失败则回滚，控制表记录也会回滚（因为在一个事务里）
 		}
-		return nil // 提交事务，控制表状态为 TRYING 持久化
+		createdOrderId = order.OrderId // 捕获自增ID
+		return nil                     // 提交事务，控制表状态为 TRYING 持久化
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	existin, err := l.svcCtx.OrderRepo.FindByXid(l.ctx, in.Xid)
-	if err != nil {
-		return nil, err
-	}
-	var resp = &order.TccTryOrderResp{
-		OrderId: existin.OrderId,
-	}
-	return resp, nil
+	return &order.TccTryOrderResp{
+		OrderId: createdOrderId,
+	}, nil
 }
