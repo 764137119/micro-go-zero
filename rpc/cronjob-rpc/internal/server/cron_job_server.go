@@ -61,6 +61,12 @@ func (s *CronJobServer) RetryTask(ctx context.Context, in *cronjob.RetryTaskReq)
 	return l.RetryTask(in)
 }
 
+// 业务方回调
+func (s *CronJobServer) ReportExecution(ctx context.Context, in *cronjob.ReportExecutionReq) (*cronjob.ReportExecutionResp, error) {
+	l := logic.NewReportExecutionLogic(ctx, s.svcCtx)
+	return l.ReportExecution(in)
+}
+
 // 任务监控
 func (s *CronJobServer) GetTaskStats(ctx context.Context, in *cronjob.TaskStatsReq) (*cronjob.TaskStatsResp, error) {
 	l := logic.NewGetTaskStatsLogic(ctx, s.svcCtx)

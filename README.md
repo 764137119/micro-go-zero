@@ -299,3 +299,5 @@ TriggerOnce      — 手动触发一次执行
 RetryTask        — 手动重试失败任务
 GetTaskStats     — 获取任务统计
 ```
+
+cron 触发 → etcd任务级锁 → gRPC服务发现调用业务方 → 等待回调 → 回调后释放锁

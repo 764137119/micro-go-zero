@@ -90,22 +90,41 @@ gen-cronjob:
 		--style=go_zero
 	@echo "✅ cronjob-rpc 生成完成"
 
-# 构建所有服务
-build-all: user-service order-service stock-service cronjob-service
+# 构建所有服务（先本地编译验证，再构建镜像）
+build-all: user-service order-service stock-service cronjob-service api-gateway
 
-# 构建 user-service
+# 先本地编译 user-rpc，通过后构建镜像
 user-service:
-	@cd user-service && docker build -t user-service:latest .
+	@echo "🔨 本地编译 user-rpc..."
+	cd rpc/user-rpc && go build ./...
+	@echo "✅ 本地编译通过，构建 user-rpc 镜像..."
+	cd rpc/user-rpc && docker build -t user-rpc:latest .
 
-# 构建 order-service
+# 先本地编译 order-rpc，通过后构建镜像
 order-service:
-	@cd order-service && docker build -t order-service:latest .
+	@echo "🔨 本地编译 order-rpc..."
+	cd rpc/order-rpc && go build ./...
+	@echo "✅ 本地编译通过，构建 order-rpc 镜像..."
+	cd rpc/order-rpc && docker build -t order-rpc:latest .
 
-# 构建 stock-service
+# 先本地编译 stock-rpc，通过后构建镜像
 stock-service:
-	@cd stock-service && docker build -t stock-service:latest .
+	@echo "🔨 本地编译 stock-rpc..."
+	cd rpc/stock-rpc && go build ./...
+	@echo "✅ 本地编译通过，构建 stock-rpc 镜像..."
+	cd rpc/stock-rpc && docker build -t stock-rpc:latest .
 
-# 构建 cronjob-service
+# 先本地编译 cronjob-rpc，通过后构建镜像
 cronjob-service:
-	@cd rpc/cronjob-rpc && docker build -t cronjob-service:latest -f Dockerfile .
+	@echo "🔨 本地编译 cronjob-rpc..."
+	cd rpc/cronjob-rpc && go build ./...
+	@echo "✅ 本地编译通过，构建 cronjob-rpc 镜像..."
+	cd rpc/cronjob-rpc && docker build -t cronjob-rpc:latest .
+
+# 先本地编译 api-gateway，通过后构建镜像
+api-gateway:
+	@echo "🔨 本地编译 api-gateway..."
+	cd api-gateway && go build ./...
+	@echo "✅ 本地编译通过，构建 api-gateway 镜像..."
+	cd api-gateway && docker build -t api-gateway:latest .
 

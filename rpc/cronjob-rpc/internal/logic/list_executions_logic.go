@@ -47,14 +47,16 @@ func (l *ListExecutionsLogic) ListExecutions(in *cronjob.ListExecutionsReq) (*cr
 	for _, r := range records {
 		execStatus := cronjob.ExecStatus_PENDING
 		switch r.Status {
-		case "running":
-			execStatus = cronjob.ExecStatus_RUNNING
+		case "dispatching":
+			execStatus = cronjob.ExecStatus_DISPATCHING
+		case "dispatched":
+			execStatus = cronjob.ExecStatus_DISPATCHED
 		case "success":
 			execStatus = cronjob.ExecStatus_SUCCESS
 		case "failed":
 			execStatus = cronjob.ExecStatus_FAILED
-		case "retrying":
-			execStatus = cronjob.ExecStatus_RETRYING
+		case "dispatch_failed":
+			execStatus = cronjob.ExecStatus_DISPATCH_FAILED
 		}
 
 		record := &cronjob.ExecutionRecord{

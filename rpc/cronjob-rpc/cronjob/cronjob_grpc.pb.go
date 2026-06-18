@@ -19,14 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CronJob_RegisterTask_FullMethodName   = "/cronjob.CronJob/RegisterTask"
-	CronJob_UnregisterTask_FullMethodName = "/cronjob.CronJob/UnregisterTask"
-	CronJob_ListTasks_FullMethodName      = "/cronjob.CronJob/ListTasks"
-	CronJob_SetTaskEnabled_FullMethodName = "/cronjob.CronJob/SetTaskEnabled"
-	CronJob_ListExecutions_FullMethodName = "/cronjob.CronJob/ListExecutions"
-	CronJob_TriggerOnce_FullMethodName    = "/cronjob.CronJob/TriggerOnce"
-	CronJob_RetryTask_FullMethodName      = "/cronjob.CronJob/RetryTask"
-	CronJob_GetTaskStats_FullMethodName   = "/cronjob.CronJob/GetTaskStats"
+	CronJob_RegisterTask_FullMethodName    = "/cronjob.CronJob/RegisterTask"
+	CronJob_UnregisterTask_FullMethodName  = "/cronjob.CronJob/UnregisterTask"
+	CronJob_ListTasks_FullMethodName       = "/cronjob.CronJob/ListTasks"
+	CronJob_SetTaskEnabled_FullMethodName  = "/cronjob.CronJob/SetTaskEnabled"
+	CronJob_ListExecutions_FullMethodName  = "/cronjob.CronJob/ListExecutions"
+	CronJob_TriggerOnce_FullMethodName     = "/cronjob.CronJob/TriggerOnce"
+	CronJob_RetryTask_FullMethodName       = "/cronjob.CronJob/RetryTask"
+	CronJob_ReportExecution_FullMethodName = "/cronjob.CronJob/ReportExecution"
+	CronJob_GetTaskStats_FullMethodName    = "/cronjob.CronJob/GetTaskStats"
 )
 
 // CronJobClient is the client API for CronJob service.
@@ -43,6 +44,8 @@ type CronJobClient interface {
 	// 任务操作
 	TriggerOnce(ctx context.Context, in *TriggerOnceReq, opts ...grpc.CallOption) (*TriggerOnceResp, error)
 	RetryTask(ctx context.Context, in *RetryTaskReq, opts ...grpc.CallOption) (*RetryTaskResp, error)
+	// 业务方回调
+	ReportExecution(ctx context.Context, in *ReportExecutionReq, opts ...grpc.CallOption) (*ReportExecutionResp, error)
 	// 任务监控
 	GetTaskStats(ctx context.Context, in *TaskStatsReq, opts ...grpc.CallOption) (*TaskStatsResp, error)
 }
@@ -125,6 +128,16 @@ func (c *cronJobClient) RetryTask(ctx context.Context, in *RetryTaskReq, opts ..
 	return out, nil
 }
 
+func (c *cronJobClient) ReportExecution(ctx context.Context, in *ReportExecutionReq, opts ...grpc.CallOption) (*ReportExecutionResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportExecutionResp)
+	err := c.cc.Invoke(ctx, CronJob_ReportExecution_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cronJobClient) GetTaskStats(ctx context.Context, in *TaskStatsReq, opts ...grpc.CallOption) (*TaskStatsResp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TaskStatsResp)
@@ -149,6 +162,8 @@ type CronJobServer interface {
 	// 任务操作
 	TriggerOnce(context.Context, *TriggerOnceReq) (*TriggerOnceResp, error)
 	RetryTask(context.Context, *RetryTaskReq) (*RetryTaskResp, error)
+	// 业务方回调
+	ReportExecution(context.Context, *ReportExecutionReq) (*ReportExecutionResp, error)
 	// 任务监控
 	GetTaskStats(context.Context, *TaskStatsReq) (*TaskStatsResp, error)
 	mustEmbedUnimplementedCronJobServer()
@@ -181,6 +196,9 @@ func (UnimplementedCronJobServer) TriggerOnce(context.Context, *TriggerOnceReq) 
 }
 func (UnimplementedCronJobServer) RetryTask(context.Context, *RetryTaskReq) (*RetryTaskResp, error) {
 	return nil, status.Error(codes.Unimplemented, "method RetryTask not implemented")
+}
+func (UnimplementedCronJobServer) ReportExecution(context.Context, *ReportExecutionReq) (*ReportExecutionResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportExecution not implemented")
 }
 func (UnimplementedCronJobServer) GetTaskStats(context.Context, *TaskStatsReq) (*TaskStatsResp, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTaskStats not implemented")
@@ -332,6 +350,24 @@ func _CronJob_RetryTask_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CronJob_ReportExecution_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportExecutionReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CronJobServer).ReportExecution(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CronJob_ReportExecution_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CronJobServer).ReportExecution(ctx, req.(*ReportExecutionReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CronJob_GetTaskStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TaskStatsReq)
 	if err := dec(in); err != nil {
@@ -384,6 +420,10 @@ var CronJob_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RetryTask",
 			Handler:    _CronJob_RetryTask_Handler,
+		},
+		{
+			MethodName: "ReportExecution",
+			Handler:    _CronJob_ReportExecution_Handler,
 		},
 		{
 			MethodName: "GetTaskStats",

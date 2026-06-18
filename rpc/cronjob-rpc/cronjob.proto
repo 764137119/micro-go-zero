@@ -23,8 +23,8 @@ message RegisterTaskReq {
   string name = 1;             // 任务名称（唯一标识）
   string cronExpr = 2;         // Cron 表达式
   TargetType targetType = 3;   // 目标类型
-  string target = 4;           // 目标地址 (gRPC: "service/method" 或 HTTP: "http://host/path")
-  string requestBody = 5;      // 请求体 JSON
+  string target = 4;           // 目标地址 (HTTP URL, 如 "http://order-rpc:8080/api/cron/check-timeout")
+  string requestBody = 5;      // 请求体 JSON (base64 编码的 proto bytes)
   RetryPolicy retryPolicy = 6; // 重试策略
   string description = 7;      // 描述
 }
@@ -81,10 +81,11 @@ message ListTasksResp {
 // 执行状态
 enum ExecStatus {
   PENDING = 0;
-  RUNNING = 1;
-  SUCCESS = 2;
-  FAILED = 3;
-  RETRYING = 4;
+  DISPATCHING = 1;       // 正在分发中
+  DISPATCHED = 2;        // 已分发成功，等待业务方回调
+  SUCCESS = 3;           // 业务方报告成功
+  FAILED = 4;            // 业务方报告失败 或 分发失败
+  DISPATCH_FAILED = 5;   // 分发失败（网络原因等）
 }
 
 // 执行记录
@@ -120,7 +121,7 @@ message ListExecutionsResp {
 
 // 手动触发执行请求
 message TriggerOnceReq {
-    int64 taskId=1;
+  int64 taskId=1;
   string taskName = 2;
 }
 
@@ -141,13 +142,27 @@ message RetryTaskResp {
 
 // 设置任务启用/禁用请求
 message SetTaskEnabledReq {
-    int64 taskId=1;
+  int64 taskId=1;
   string name = 2;
   bool enabled = 3;
 }
 
 // 设置任务启用/禁用响应
 message SetTaskEnabledResp {
+  bool ok = 1;
+}
+
+// ==================== 回调接口 ====================
+
+// 报告执行结果请求（业务方处理完任务后调用）
+message ReportExecutionReq {
+  int64 executionId = 1;
+  ExecStatus status = 2;      // SUCCESS 或 FAILED
+  string result = 3;          // 执行结果/错误信息
+}
+
+// 报告执行结果响应
+message ReportExecutionResp {
   bool ok = 1;
 }
 
@@ -184,6 +199,9 @@ service CronJob {
   // 任务操作
   rpc TriggerOnce(TriggerOnceReq) returns (TriggerOnceResp);
   rpc RetryTask(RetryTaskReq) returns (RetryTaskResp);
+
+  // 业务方回调
+  rpc ReportExecution(ReportExecutionReq) returns (ReportExecutionResp);
 
   // 任务监控
   rpc GetTaskStats(TaskStatsReq) returns (TaskStatsResp);

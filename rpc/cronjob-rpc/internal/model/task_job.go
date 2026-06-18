@@ -7,6 +7,16 @@ import (
 	"gorm.io/gorm"
 )
 
+// 执行状态常量
+const (
+	ExecStatusPending        = "pending"
+	ExecStatusDispatching    = "dispatching"
+	ExecStatusDispatched     = "dispatched"
+	ExecStatusSuccess        = "success"
+	ExecStatusFailed         = "failed"
+	ExecStatusDispatchFailed = "dispatch_failed"
+)
+
 // TaskJob 任务注册表
 type TaskJob struct {
 	ID            int64     `gorm:"column:id;primaryKey;autoIncrement"`
@@ -34,7 +44,7 @@ type TaskExecution struct {
 	ScheduledAt time.Time `gorm:"column:scheduled_at;type:datetime;not null;index"`
 	StartedAt   time.Time `gorm:"column:started_at;type:datetime"`
 	FinishedAt  time.Time `gorm:"column:finished_at;type:datetime"`
-	Status      string    `gorm:"column:status;type:varchar(16);not null;default:'pending';index"` // pending/running/success/failed/retrying
+	Status      string    `gorm:"column:status;type:varchar(16);not null;default:'pending';index"`
 	RetryCount  int32     `gorm:"column:retry_count;type:int;not null;default:0"`
 	MaxRetries  int32     `gorm:"column:max_retries;type:int;not null;default:3"`
 	Result      string    `gorm:"column:result;type:text"`
@@ -116,6 +126,17 @@ func (r *TaskExecutionRepo) FindByID(ctx context.Context, id int64) (*TaskExecut
 	return &exec, err
 }
 
+func (r *TaskExecutionRepo) FindLastRunning(ctx context.Context, taskName string) (*TaskExecution, error) {
+	var exec TaskExecution
+	err := r.db.WithContext(ctx).
+		Where("task_name = ? AND status IN ?", taskName, []string{ExecStatusDispatching, ExecStatusDispatched}).
+		Order("id DESC").First(&exec).Error
+	if err != nil {
+		return nil, err
+	}
+	return &exec, nil
+}
+
 func (r *TaskExecutionRepo) List(ctx context.Context, taskName string, status string, page, pageSize int32) ([]TaskExecution, int64, error) {
 	var records []TaskExecution
 	var total int64
@@ -136,7 +157,7 @@ func (r *TaskExecutionRepo) List(ctx context.Context, taskName string, status st
 func (r *TaskExecutionRepo) FindPendingRetry(ctx context.Context, maxRetryCount int32) ([]TaskExecution, error) {
 	var records []TaskExecution
 	err := r.db.WithContext(ctx).
-		Where("status IN ?", []string{"failed", "retrying"}).
+		Where("status IN ?", []string{ExecStatusFailed, ExecStatusDispatchFailed}).
 		Where("retry_count < max_retries").
 		Where("retry_count < ?", maxRetryCount).
 		Find(&records).Error
@@ -145,24 +166,20 @@ func (r *TaskExecutionRepo) FindPendingRetry(ctx context.Context, maxRetryCount 
 
 // GetTaskStats 获取任务统计
 func (r *TaskExecutionRepo) GetTaskStats(ctx context.Context, taskName string) (totalExecutions, successCount, failedCount, runningCount int64, lastExecutedAt *time.Time, lastStatus string, err error) {
-	err = r.db.WithContext(ctx).Model(&TaskExecution{}).
-		Select("COUNT(*) as total").
+	r.db.WithContext(ctx).Model(&TaskExecution{}).
 		Where("task_name = ?", taskName).
-		Scan(&totalExecutions).Error
-	if err != nil {
-		return
-	}
+		Count(&totalExecutions)
 
 	r.db.WithContext(ctx).Model(&TaskExecution{}).
-		Where("task_name = ? AND status = ?", taskName, "success").
+		Where("task_name = ? AND status = ?", taskName, ExecStatusSuccess).
 		Count(&successCount)
 
 	r.db.WithContext(ctx).Model(&TaskExecution{}).
-		Where("task_name = ? AND status = ?", taskName, "failed").
+		Where("task_name = ? AND status IN ?", taskName, []string{ExecStatusFailed, ExecStatusDispatchFailed}).
 		Count(&failedCount)
 
 	r.db.WithContext(ctx).Model(&TaskExecution{}).
-		Where("task_name = ? AND status = ?", taskName, "running").
+		Where("task_name = ? AND status IN ?", taskName, []string{ExecStatusDispatching, ExecStatusDispatched}).
 		Count(&runningCount)
 
 	var last TaskExecution

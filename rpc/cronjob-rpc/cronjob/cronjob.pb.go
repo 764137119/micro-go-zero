@@ -119,28 +119,31 @@ func (TaskStatus) EnumDescriptor() ([]byte, []int) {
 type ExecStatus int32
 
 const (
-	ExecStatus_PENDING  ExecStatus = 0
-	ExecStatus_RUNNING  ExecStatus = 1
-	ExecStatus_SUCCESS  ExecStatus = 2
-	ExecStatus_FAILED   ExecStatus = 3
-	ExecStatus_RETRYING ExecStatus = 4
+	ExecStatus_PENDING         ExecStatus = 0
+	ExecStatus_DISPATCHING     ExecStatus = 1 // 正在分发中
+	ExecStatus_DISPATCHED      ExecStatus = 2 // 已分发成功，等待业务方回调
+	ExecStatus_SUCCESS         ExecStatus = 3 // 业务方报告成功
+	ExecStatus_FAILED          ExecStatus = 4 // 业务方报告失败 或 分发失败
+	ExecStatus_DISPATCH_FAILED ExecStatus = 5 // 分发失败（网络原因等）
 )
 
 // Enum value maps for ExecStatus.
 var (
 	ExecStatus_name = map[int32]string{
 		0: "PENDING",
-		1: "RUNNING",
-		2: "SUCCESS",
-		3: "FAILED",
-		4: "RETRYING",
+		1: "DISPATCHING",
+		2: "DISPATCHED",
+		3: "SUCCESS",
+		4: "FAILED",
+		5: "DISPATCH_FAILED",
 	}
 	ExecStatus_value = map[string]int32{
-		"PENDING":  0,
-		"RUNNING":  1,
-		"SUCCESS":  2,
-		"FAILED":   3,
-		"RETRYING": 4,
+		"PENDING":         0,
+		"DISPATCHING":     1,
+		"DISPATCHED":      2,
+		"SUCCESS":         3,
+		"FAILED":          4,
+		"DISPATCH_FAILED": 5,
 	}
 )
 
@@ -230,8 +233,8 @@ type RegisterTaskReq struct {
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                                      // 任务名称（唯一标识）
 	CronExpr      string                 `protobuf:"bytes,2,opt,name=cronExpr,proto3" json:"cronExpr,omitempty"`                              // Cron 表达式
 	TargetType    TargetType             `protobuf:"varint,3,opt,name=targetType,proto3,enum=cronjob.TargetType" json:"targetType,omitempty"` // 目标类型
-	Target        string                 `protobuf:"bytes,4,opt,name=target,proto3" json:"target,omitempty"`                                  // 目标地址 (gRPC: "service/method" 或 HTTP: "http://host/path")
-	RequestBody   string                 `protobuf:"bytes,5,opt,name=requestBody,proto3" json:"requestBody,omitempty"`                        // 请求体 JSON
+	Target        string                 `protobuf:"bytes,4,opt,name=target,proto3" json:"target,omitempty"`                                  // 目标地址 (HTTP URL, 如 "http://order-rpc:8080/api/cron/check-timeout")
+	RequestBody   string                 `protobuf:"bytes,5,opt,name=requestBody,proto3" json:"requestBody,omitempty"`                        // 请求体 JSON (base64 编码的 proto bytes)
 	RetryPolicy   *RetryPolicy           `protobuf:"bytes,6,opt,name=retryPolicy,proto3" json:"retryPolicy,omitempty"`                        // 重试策略
 	Description   string                 `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`                        // 描述
 	unknownFields protoimpl.UnknownFields
@@ -1216,6 +1219,112 @@ func (x *SetTaskEnabledResp) GetOk() bool {
 	return false
 }
 
+// 报告执行结果请求（业务方处理完任务后调用）
+type ReportExecutionReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExecutionId   int64                  `protobuf:"varint,1,opt,name=executionId,proto3" json:"executionId,omitempty"`
+	Status        ExecStatus             `protobuf:"varint,2,opt,name=status,proto3,enum=cronjob.ExecStatus" json:"status,omitempty"` // SUCCESS 或 FAILED
+	Result        string                 `protobuf:"bytes,3,opt,name=result,proto3" json:"result,omitempty"`                          // 执行结果/错误信息
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportExecutionReq) Reset() {
+	*x = ReportExecutionReq{}
+	mi := &file_cronjob_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportExecutionReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportExecutionReq) ProtoMessage() {}
+
+func (x *ReportExecutionReq) ProtoReflect() protoreflect.Message {
+	mi := &file_cronjob_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportExecutionReq.ProtoReflect.Descriptor instead.
+func (*ReportExecutionReq) Descriptor() ([]byte, []int) {
+	return file_cronjob_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ReportExecutionReq) GetExecutionId() int64 {
+	if x != nil {
+		return x.ExecutionId
+	}
+	return 0
+}
+
+func (x *ReportExecutionReq) GetStatus() ExecStatus {
+	if x != nil {
+		return x.Status
+	}
+	return ExecStatus_PENDING
+}
+
+func (x *ReportExecutionReq) GetResult() string {
+	if x != nil {
+		return x.Result
+	}
+	return ""
+}
+
+// 报告执行结果响应
+type ReportExecutionResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportExecutionResp) Reset() {
+	*x = ReportExecutionResp{}
+	mi := &file_cronjob_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportExecutionResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportExecutionResp) ProtoMessage() {}
+
+func (x *ReportExecutionResp) ProtoReflect() protoreflect.Message {
+	mi := &file_cronjob_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportExecutionResp.ProtoReflect.Descriptor instead.
+func (*ReportExecutionResp) Descriptor() ([]byte, []int) {
+	return file_cronjob_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ReportExecutionResp) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
 // 任务统计请求
 type TaskStatsReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1226,7 +1335,7 @@ type TaskStatsReq struct {
 
 func (x *TaskStatsReq) Reset() {
 	*x = TaskStatsReq{}
-	mi := &file_cronjob_proto_msgTypes[17]
+	mi := &file_cronjob_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1238,7 +1347,7 @@ func (x *TaskStatsReq) String() string {
 func (*TaskStatsReq) ProtoMessage() {}
 
 func (x *TaskStatsReq) ProtoReflect() protoreflect.Message {
-	mi := &file_cronjob_proto_msgTypes[17]
+	mi := &file_cronjob_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1251,7 +1360,7 @@ func (x *TaskStatsReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskStatsReq.ProtoReflect.Descriptor instead.
 func (*TaskStatsReq) Descriptor() ([]byte, []int) {
-	return file_cronjob_proto_rawDescGZIP(), []int{17}
+	return file_cronjob_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *TaskStatsReq) GetTaskName() string {
@@ -1277,7 +1386,7 @@ type TaskStatsResp struct {
 
 func (x *TaskStatsResp) Reset() {
 	*x = TaskStatsResp{}
-	mi := &file_cronjob_proto_msgTypes[18]
+	mi := &file_cronjob_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1289,7 +1398,7 @@ func (x *TaskStatsResp) String() string {
 func (*TaskStatsResp) ProtoMessage() {}
 
 func (x *TaskStatsResp) ProtoReflect() protoreflect.Message {
-	mi := &file_cronjob_proto_msgTypes[18]
+	mi := &file_cronjob_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1302,7 +1411,7 @@ func (x *TaskStatsResp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TaskStatsResp.ProtoReflect.Descriptor instead.
 func (*TaskStatsResp) Descriptor() ([]byte, []int) {
-	return file_cronjob_proto_rawDescGZIP(), []int{18}
+	return file_cronjob_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *TaskStatsResp) GetTaskName() string {
@@ -1441,6 +1550,12 @@ const file_cronjob_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\aenabled\x18\x03 \x01(\bR\aenabled\"$\n" +
 	"\x12SetTaskEnabledResp\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\"{\n" +
+	"\x12ReportExecutionReq\x12 \n" +
+	"\vexecutionId\x18\x01 \x01(\x03R\vexecutionId\x12+\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x13.cronjob.ExecStatusR\x06status\x12\x16\n" +
+	"\x06result\x18\x03 \x01(\tR\x06result\"%\n" +
+	"\x13ReportExecutionResp\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\"*\n" +
 	"\fTaskStatsReq\x12\x1a\n" +
 	"\btaskName\x18\x01 \x01(\tR\btaskName\"\x9c\x02\n" +
@@ -1461,15 +1576,17 @@ const file_cronjob_proto_rawDesc = "" +
 	"\n" +
 	"TaskStatus\x12\x11\n" +
 	"\rTASK_DISABLED\x10\x00\x12\x10\n" +
-	"\fTASK_ENABLED\x10\x01*M\n" +
+	"\fTASK_ENABLED\x10\x01*h\n" +
 	"\n" +
 	"ExecStatus\x12\v\n" +
-	"\aPENDING\x10\x00\x12\v\n" +
-	"\aRUNNING\x10\x01\x12\v\n" +
-	"\aSUCCESS\x10\x02\x12\n" +
+	"\aPENDING\x10\x00\x12\x0f\n" +
+	"\vDISPATCHING\x10\x01\x12\x0e\n" +
 	"\n" +
-	"\x06FAILED\x10\x03\x12\f\n" +
-	"\bRETRYING\x10\x042\xa8\x04\n" +
+	"DISPATCHED\x10\x02\x12\v\n" +
+	"\aSUCCESS\x10\x03\x12\n" +
+	"\n" +
+	"\x06FAILED\x10\x04\x12\x13\n" +
+	"\x0fDISPATCH_FAILED\x10\x052\xf6\x04\n" +
 	"\aCronJob\x12C\n" +
 	"\fRegisterTask\x12\x18.cronjob.RegisterTaskReq\x1a\x19.cronjob.RegisterTaskResp\x12I\n" +
 	"\x0eUnregisterTask\x12\x1a.cronjob.UnregisterTaskReq\x1a\x1b.cronjob.UnregisterTaskResp\x12:\n" +
@@ -1477,7 +1594,8 @@ const file_cronjob_proto_rawDesc = "" +
 	"\x0eSetTaskEnabled\x12\x1a.cronjob.SetTaskEnabledReq\x1a\x1b.cronjob.SetTaskEnabledResp\x12I\n" +
 	"\x0eListExecutions\x12\x1a.cronjob.ListExecutionsReq\x1a\x1b.cronjob.ListExecutionsResp\x12@\n" +
 	"\vTriggerOnce\x12\x17.cronjob.TriggerOnceReq\x1a\x18.cronjob.TriggerOnceResp\x12:\n" +
-	"\tRetryTask\x12\x15.cronjob.RetryTaskReq\x1a\x16.cronjob.RetryTaskResp\x12=\n" +
+	"\tRetryTask\x12\x15.cronjob.RetryTaskReq\x1a\x16.cronjob.RetryTaskResp\x12L\n" +
+	"\x0fReportExecution\x12\x1b.cronjob.ReportExecutionReq\x1a\x1c.cronjob.ReportExecutionResp\x12=\n" +
 	"\fGetTaskStats\x12\x15.cronjob.TaskStatsReq\x1a\x16.cronjob.TaskStatsRespB\vZ\t./cronjobb\x06proto3"
 
 var (
@@ -1493,30 +1611,32 @@ func file_cronjob_proto_rawDescGZIP() []byte {
 }
 
 var file_cronjob_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_cronjob_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_cronjob_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_cronjob_proto_goTypes = []any{
-	(TargetType)(0),            // 0: cronjob.TargetType
-	(TaskStatus)(0),            // 1: cronjob.TaskStatus
-	(ExecStatus)(0),            // 2: cronjob.ExecStatus
-	(*RetryPolicy)(nil),        // 3: cronjob.RetryPolicy
-	(*RegisterTaskReq)(nil),    // 4: cronjob.RegisterTaskReq
-	(*RegisterTaskResp)(nil),   // 5: cronjob.RegisterTaskResp
-	(*UnregisterTaskReq)(nil),  // 6: cronjob.UnregisterTaskReq
-	(*UnregisterTaskResp)(nil), // 7: cronjob.UnregisterTaskResp
-	(*TaskInfo)(nil),           // 8: cronjob.TaskInfo
-	(*ListTasksReq)(nil),       // 9: cronjob.ListTasksReq
-	(*ListTasksResp)(nil),      // 10: cronjob.ListTasksResp
-	(*ExecutionRecord)(nil),    // 11: cronjob.ExecutionRecord
-	(*ListExecutionsReq)(nil),  // 12: cronjob.ListExecutionsReq
-	(*ListExecutionsResp)(nil), // 13: cronjob.ListExecutionsResp
-	(*TriggerOnceReq)(nil),     // 14: cronjob.TriggerOnceReq
-	(*TriggerOnceResp)(nil),    // 15: cronjob.TriggerOnceResp
-	(*RetryTaskReq)(nil),       // 16: cronjob.RetryTaskReq
-	(*RetryTaskResp)(nil),      // 17: cronjob.RetryTaskResp
-	(*SetTaskEnabledReq)(nil),  // 18: cronjob.SetTaskEnabledReq
-	(*SetTaskEnabledResp)(nil), // 19: cronjob.SetTaskEnabledResp
-	(*TaskStatsReq)(nil),       // 20: cronjob.TaskStatsReq
-	(*TaskStatsResp)(nil),      // 21: cronjob.TaskStatsResp
+	(TargetType)(0),             // 0: cronjob.TargetType
+	(TaskStatus)(0),             // 1: cronjob.TaskStatus
+	(ExecStatus)(0),             // 2: cronjob.ExecStatus
+	(*RetryPolicy)(nil),         // 3: cronjob.RetryPolicy
+	(*RegisterTaskReq)(nil),     // 4: cronjob.RegisterTaskReq
+	(*RegisterTaskResp)(nil),    // 5: cronjob.RegisterTaskResp
+	(*UnregisterTaskReq)(nil),   // 6: cronjob.UnregisterTaskReq
+	(*UnregisterTaskResp)(nil),  // 7: cronjob.UnregisterTaskResp
+	(*TaskInfo)(nil),            // 8: cronjob.TaskInfo
+	(*ListTasksReq)(nil),        // 9: cronjob.ListTasksReq
+	(*ListTasksResp)(nil),       // 10: cronjob.ListTasksResp
+	(*ExecutionRecord)(nil),     // 11: cronjob.ExecutionRecord
+	(*ListExecutionsReq)(nil),   // 12: cronjob.ListExecutionsReq
+	(*ListExecutionsResp)(nil),  // 13: cronjob.ListExecutionsResp
+	(*TriggerOnceReq)(nil),      // 14: cronjob.TriggerOnceReq
+	(*TriggerOnceResp)(nil),     // 15: cronjob.TriggerOnceResp
+	(*RetryTaskReq)(nil),        // 16: cronjob.RetryTaskReq
+	(*RetryTaskResp)(nil),       // 17: cronjob.RetryTaskResp
+	(*SetTaskEnabledReq)(nil),   // 18: cronjob.SetTaskEnabledReq
+	(*SetTaskEnabledResp)(nil),  // 19: cronjob.SetTaskEnabledResp
+	(*ReportExecutionReq)(nil),  // 20: cronjob.ReportExecutionReq
+	(*ReportExecutionResp)(nil), // 21: cronjob.ReportExecutionResp
+	(*TaskStatsReq)(nil),        // 22: cronjob.TaskStatsReq
+	(*TaskStatsResp)(nil),       // 23: cronjob.TaskStatsResp
 }
 var file_cronjob_proto_depIdxs = []int32{
 	0,  // 0: cronjob.RegisterTaskReq.targetType:type_name -> cronjob.TargetType
@@ -1528,28 +1648,31 @@ var file_cronjob_proto_depIdxs = []int32{
 	2,  // 6: cronjob.ExecutionRecord.status:type_name -> cronjob.ExecStatus
 	2,  // 7: cronjob.ListExecutionsReq.status:type_name -> cronjob.ExecStatus
 	11, // 8: cronjob.ListExecutionsResp.records:type_name -> cronjob.ExecutionRecord
-	2,  // 9: cronjob.TaskStatsResp.lastStatus:type_name -> cronjob.ExecStatus
-	4,  // 10: cronjob.CronJob.RegisterTask:input_type -> cronjob.RegisterTaskReq
-	6,  // 11: cronjob.CronJob.UnregisterTask:input_type -> cronjob.UnregisterTaskReq
-	9,  // 12: cronjob.CronJob.ListTasks:input_type -> cronjob.ListTasksReq
-	18, // 13: cronjob.CronJob.SetTaskEnabled:input_type -> cronjob.SetTaskEnabledReq
-	12, // 14: cronjob.CronJob.ListExecutions:input_type -> cronjob.ListExecutionsReq
-	14, // 15: cronjob.CronJob.TriggerOnce:input_type -> cronjob.TriggerOnceReq
-	16, // 16: cronjob.CronJob.RetryTask:input_type -> cronjob.RetryTaskReq
-	20, // 17: cronjob.CronJob.GetTaskStats:input_type -> cronjob.TaskStatsReq
-	5,  // 18: cronjob.CronJob.RegisterTask:output_type -> cronjob.RegisterTaskResp
-	7,  // 19: cronjob.CronJob.UnregisterTask:output_type -> cronjob.UnregisterTaskResp
-	10, // 20: cronjob.CronJob.ListTasks:output_type -> cronjob.ListTasksResp
-	19, // 21: cronjob.CronJob.SetTaskEnabled:output_type -> cronjob.SetTaskEnabledResp
-	13, // 22: cronjob.CronJob.ListExecutions:output_type -> cronjob.ListExecutionsResp
-	15, // 23: cronjob.CronJob.TriggerOnce:output_type -> cronjob.TriggerOnceResp
-	17, // 24: cronjob.CronJob.RetryTask:output_type -> cronjob.RetryTaskResp
-	21, // 25: cronjob.CronJob.GetTaskStats:output_type -> cronjob.TaskStatsResp
-	18, // [18:26] is the sub-list for method output_type
-	10, // [10:18] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	2,  // 9: cronjob.ReportExecutionReq.status:type_name -> cronjob.ExecStatus
+	2,  // 10: cronjob.TaskStatsResp.lastStatus:type_name -> cronjob.ExecStatus
+	4,  // 11: cronjob.CronJob.RegisterTask:input_type -> cronjob.RegisterTaskReq
+	6,  // 12: cronjob.CronJob.UnregisterTask:input_type -> cronjob.UnregisterTaskReq
+	9,  // 13: cronjob.CronJob.ListTasks:input_type -> cronjob.ListTasksReq
+	18, // 14: cronjob.CronJob.SetTaskEnabled:input_type -> cronjob.SetTaskEnabledReq
+	12, // 15: cronjob.CronJob.ListExecutions:input_type -> cronjob.ListExecutionsReq
+	14, // 16: cronjob.CronJob.TriggerOnce:input_type -> cronjob.TriggerOnceReq
+	16, // 17: cronjob.CronJob.RetryTask:input_type -> cronjob.RetryTaskReq
+	20, // 18: cronjob.CronJob.ReportExecution:input_type -> cronjob.ReportExecutionReq
+	22, // 19: cronjob.CronJob.GetTaskStats:input_type -> cronjob.TaskStatsReq
+	5,  // 20: cronjob.CronJob.RegisterTask:output_type -> cronjob.RegisterTaskResp
+	7,  // 21: cronjob.CronJob.UnregisterTask:output_type -> cronjob.UnregisterTaskResp
+	10, // 22: cronjob.CronJob.ListTasks:output_type -> cronjob.ListTasksResp
+	19, // 23: cronjob.CronJob.SetTaskEnabled:output_type -> cronjob.SetTaskEnabledResp
+	13, // 24: cronjob.CronJob.ListExecutions:output_type -> cronjob.ListExecutionsResp
+	15, // 25: cronjob.CronJob.TriggerOnce:output_type -> cronjob.TriggerOnceResp
+	17, // 26: cronjob.CronJob.RetryTask:output_type -> cronjob.RetryTaskResp
+	21, // 27: cronjob.CronJob.ReportExecution:output_type -> cronjob.ReportExecutionResp
+	23, // 28: cronjob.CronJob.GetTaskStats:output_type -> cronjob.TaskStatsResp
+	20, // [20:29] is the sub-list for method output_type
+	11, // [11:20] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_cronjob_proto_init() }
@@ -1563,7 +1686,7 @@ func file_cronjob_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cronjob_proto_rawDesc), len(file_cronjob_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   19,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

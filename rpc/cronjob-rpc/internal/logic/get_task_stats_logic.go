@@ -31,14 +31,16 @@ func (l *GetTaskStatsLogic) GetTaskStats(in *cronjob.TaskStatsReq) (*cronjob.Tas
 
 	lastStatusEnum := cronjob.ExecStatus_PENDING
 	switch lastStatus {
-	case "running":
-		lastStatusEnum = cronjob.ExecStatus_RUNNING
+	case "dispatching":
+		lastStatusEnum = cronjob.ExecStatus_DISPATCHING
+	case "dispatched":
+		lastStatusEnum = cronjob.ExecStatus_DISPATCHED
 	case "success":
 		lastStatusEnum = cronjob.ExecStatus_SUCCESS
 	case "failed":
 		lastStatusEnum = cronjob.ExecStatus_FAILED
-	case "retrying":
-		lastStatusEnum = cronjob.ExecStatus_RETRYING
+	case "dispatch_failed":
+		lastStatusEnum = cronjob.ExecStatus_DISPATCH_FAILED
 	}
 
 	lastExecAt := int64(0)

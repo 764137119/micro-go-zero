@@ -14,25 +14,27 @@ import (
 )
 
 type (
-	ExecutionRecord    = cronjob.ExecutionRecord
-	ListExecutionsReq  = cronjob.ListExecutionsReq
-	ListExecutionsResp = cronjob.ListExecutionsResp
-	ListTasksReq       = cronjob.ListTasksReq
-	ListTasksResp      = cronjob.ListTasksResp
-	RegisterTaskReq    = cronjob.RegisterTaskReq
-	RegisterTaskResp   = cronjob.RegisterTaskResp
-	RetryPolicy        = cronjob.RetryPolicy
-	RetryTaskReq       = cronjob.RetryTaskReq
-	RetryTaskResp      = cronjob.RetryTaskResp
-	SetTaskEnabledReq  = cronjob.SetTaskEnabledReq
-	SetTaskEnabledResp = cronjob.SetTaskEnabledResp
-	TaskInfo           = cronjob.TaskInfo
-	TaskStatsReq       = cronjob.TaskStatsReq
-	TaskStatsResp      = cronjob.TaskStatsResp
-	TriggerOnceReq     = cronjob.TriggerOnceReq
-	TriggerOnceResp    = cronjob.TriggerOnceResp
-	UnregisterTaskReq  = cronjob.UnregisterTaskReq
-	UnregisterTaskResp = cronjob.UnregisterTaskResp
+	ExecutionRecord     = cronjob.ExecutionRecord
+	ListExecutionsReq   = cronjob.ListExecutionsReq
+	ListExecutionsResp  = cronjob.ListExecutionsResp
+	ListTasksReq        = cronjob.ListTasksReq
+	ListTasksResp       = cronjob.ListTasksResp
+	RegisterTaskReq     = cronjob.RegisterTaskReq
+	RegisterTaskResp    = cronjob.RegisterTaskResp
+	ReportExecutionReq  = cronjob.ReportExecutionReq
+	ReportExecutionResp = cronjob.ReportExecutionResp
+	RetryPolicy         = cronjob.RetryPolicy
+	RetryTaskReq        = cronjob.RetryTaskReq
+	RetryTaskResp       = cronjob.RetryTaskResp
+	SetTaskEnabledReq   = cronjob.SetTaskEnabledReq
+	SetTaskEnabledResp  = cronjob.SetTaskEnabledResp
+	TaskInfo            = cronjob.TaskInfo
+	TaskStatsReq        = cronjob.TaskStatsReq
+	TaskStatsResp       = cronjob.TaskStatsResp
+	TriggerOnceReq      = cronjob.TriggerOnceReq
+	TriggerOnceResp     = cronjob.TriggerOnceResp
+	UnregisterTaskReq   = cronjob.UnregisterTaskReq
+	UnregisterTaskResp  = cronjob.UnregisterTaskResp
 
 	CronJob interface {
 		// 任务管理
@@ -45,6 +47,8 @@ type (
 		// 任务操作
 		TriggerOnce(ctx context.Context, in *TriggerOnceReq, opts ...grpc.CallOption) (*TriggerOnceResp, error)
 		RetryTask(ctx context.Context, in *RetryTaskReq, opts ...grpc.CallOption) (*RetryTaskResp, error)
+		// 业务方回调
+		ReportExecution(ctx context.Context, in *ReportExecutionReq, opts ...grpc.CallOption) (*ReportExecutionResp, error)
 		// 任务监控
 		GetTaskStats(ctx context.Context, in *TaskStatsReq, opts ...grpc.CallOption) (*TaskStatsResp, error)
 	}
@@ -96,6 +100,12 @@ func (m *defaultCronJob) TriggerOnce(ctx context.Context, in *TriggerOnceReq, op
 func (m *defaultCronJob) RetryTask(ctx context.Context, in *RetryTaskReq, opts ...grpc.CallOption) (*RetryTaskResp, error) {
 	client := cronjob.NewCronJobClient(m.cli.Conn())
 	return client.RetryTask(ctx, in, opts...)
+}
+
+// 业务方回调
+func (m *defaultCronJob) ReportExecution(ctx context.Context, in *ReportExecutionReq, opts ...grpc.CallOption) (*ReportExecutionResp, error) {
+	client := cronjob.NewCronJobClient(m.cli.Conn())
+	return client.ReportExecution(ctx, in, opts...)
 }
 
 // 任务监控
