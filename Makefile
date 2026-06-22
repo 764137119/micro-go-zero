@@ -1,5 +1,5 @@
 # 本地测试专用 Makefile
-COMPOSE_FILE = docker-compose.local.yml
+COMPOSE_FILE = docker-compose.local.yaml
 PROJECT_NAME = dtm-local-test
 
 .PHONY: build up down restart logs init-db clean
@@ -7,11 +7,19 @@ PROJECT_NAME = dtm-local-test
 # 构建所有镜像（不推送）
 build:
 	@echo "🔨 本地构建镜像..."
+	http_proxy=socks5://127.0.0.1:56666 \
+	https_proxy=socks5://127.0.0.1:56666 \
+	all_proxy=socks5://127.0.0.1:56666 \
+	no_proxy=localhost,127.0.0.1,.local \
 	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) build
 
 # 启动所有服务（后台运行）
 up: build
 	@echo "🚀 启动本地测试环境..."
+	http_proxy=socks5://127.0.0.1:56666 \
+	https_proxy=socks5://127.0.0.1:56666 \
+	all_proxy=socks5://127.0.0.1:56666 \
+	no_proxy=localhost,127.0.0.1,.local \
 	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up -d
 	@echo "✅ DTM Dashboard: http://localhost:36789"
 
@@ -27,10 +35,6 @@ restart:
 logs:
 	docker compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) logs -f $(svc)
 
-# 初始化 DTM 数据库表
-init-db:
-	@chmod +x deploy/init-dtm-db.sh
-	@./deploy/init-dtm-db.sh
 
 # 清理本地构建产物
 clean: down
@@ -93,38 +97,38 @@ gen-cronjob:
 # 构建所有服务（先本地编译验证，再构建镜像）
 build-all: user-service order-service stock-service cronjob-service api-gateway
 
-# 先本地编译 user-rpc，通过后构建镜像
+# 先本地编译 user-rpc 并生成二进制，再基于根目录 context 构建镜像
 user-service:
 	@echo "🔨 本地编译 user-rpc..."
-	cd rpc/user-rpc && go build ./...
-	@echo "✅ 本地编译通过，构建 user-rpc 镜像..."
-	cd rpc/user-rpc && docker build -t user-rpc:latest .
+	cd rpc/user-rpc && CGO_ENABLED=0 go build -ldflags="-s -w" -o user-rpc .
+	@echo "✅ 二进制构建完成，构建 user-rpc 镜像..."
+	docker build -t user-rpc:latest -f rpc/user-rpc/Dockerfile .
 
-# 先本地编译 order-rpc，通过后构建镜像
+# 先本地编译 order-rpc 并生成二进制，再基于根目录 context 构建镜像
 order-service:
 	@echo "🔨 本地编译 order-rpc..."
-	cd rpc/order-rpc && go build ./...
-	@echo "✅ 本地编译通过，构建 order-rpc 镜像..."
-	cd rpc/order-rpc && docker build -t order-rpc:latest .
+	cd rpc/order-rpc && CGO_ENABLED=0 go build -ldflags="-s -w" -o order-rpc .
+	@echo "✅ 二进制构建完成，构建 order-rpc 镜像..."
+	docker build -t order-rpc:latest -f rpc/order-rpc/Dockerfile .
 
-# 先本地编译 stock-rpc，通过后构建镜像
+# 先本地编译 stock-rpc 并生成二进制，再基于根目录 context 构建镜像
 stock-service:
 	@echo "🔨 本地编译 stock-rpc..."
-	cd rpc/stock-rpc && go build ./...
-	@echo "✅ 本地编译通过，构建 stock-rpc 镜像..."
-	cd rpc/stock-rpc && docker build -t stock-rpc:latest .
+	cd rpc/stock-rpc && CGO_ENABLED=0 go build -ldflags="-s -w" -o stock-rpc .
+	@echo "✅ 二进制构建完成，构建 stock-rpc 镜像..."
+	docker build -t stock-rpc:latest -f rpc/stock-rpc/Dockerfile .
 
-# 先本地编译 cronjob-rpc，通过后构建镜像
+# 先本地编译 cronjob-rpc 并生成二进制，再基于根目录 context 构建镜像
 cronjob-service:
 	@echo "🔨 本地编译 cronjob-rpc..."
-	cd rpc/cronjob-rpc && go build ./...
-	@echo "✅ 本地编译通过，构建 cronjob-rpc 镜像..."
-	cd rpc/cronjob-rpc && docker build -t cronjob-rpc:latest .
+	cd rpc/cronjob-rpc && CGO_ENABLED=0 go build -ldflags="-s -w" -o cronjob-rpc .
+	@echo "✅ 二进制构建完成，构建 cronjob-rpc 镜像..."
+	docker build -t cronjob-rpc:latest -f rpc/cronjob-rpc/Dockerfile .
 
-# 先本地编译 api-gateway，通过后构建镜像
+# 先本地编译 api-gateway 并生成二进制，再基于根目录 context 构建镜像
 api-gateway:
 	@echo "🔨 本地编译 api-gateway..."
-	cd api-gateway && go build ./...
-	@echo "✅ 本地编译通过，构建 api-gateway 镜像..."
-	cd api-gateway && docker build -t api-gateway:latest .
+	cd api-gateway && CGO_ENABLED=0 go build -ldflags="-s -w" -o api-gateway .
+	@echo "✅ 二进制构建完成，构建 api-gateway 镜像..."
+	docker build -t api-gateway:latest -f api-gateway/Dockerfile .
 
