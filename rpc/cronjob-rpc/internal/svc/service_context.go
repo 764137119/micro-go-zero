@@ -7,9 +7,10 @@ import (
 	"cronjob-rpc/internal/scheduler"
 	"time"
 
+	"common/gormx"
+
 	"github.com/zeromicro/go-zero/core/logx"
 	clientv3 "go.etcd.io/etcd/client/v3"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -26,7 +27,7 @@ type ServiceContext struct {
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	// 数据库连接
-	db := mustNewDB(c.DB.DataSource)
+	db := gormx.MustNewDB(c.DB.DataSource)
 	model.AutoMigrate(db)
 
 	// etcd 客户端
@@ -95,20 +96,4 @@ func (s *ServiceContext) Stop() {
 	}
 
 	logx.Info("Scheduler shutdown complete")
-}
-
-// mustNewDB 创建数据库连接
-func mustNewDB(dsn string) *gorm.DB {
-	if dsn == "" {
-		logx.Error("database dsn is empty")
-		panic("database dsn is empty")
-	}
-
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		SkipDefaultTransaction: true,
-	})
-	if err != nil {
-		logx.Must(err)
-	}
-	return db
 }

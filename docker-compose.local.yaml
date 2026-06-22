@@ -22,7 +22,6 @@ services:
       - "3306:3306"
     volumes:
       - /Users/wangyingwen/work/golang/mysql_data:/var/lib/mysql
-      - ./deploy/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
       interval: 5s
@@ -55,6 +54,7 @@ services:
       - "8080:8080"
     depends_on:
       - etcd
+      - mysql
     restart: unless-stopped
 
   order-rpc:
@@ -64,8 +64,12 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - etcd
-      - dtm
+      dtm:
+        condition: service_healthy
+      etcd:
+        condition:service_started
+      mysql:
+        condition:service_healthy
     restart: unless-stopped
 
   stock-rpc:
@@ -76,6 +80,8 @@ services:
       - "8082:8082"
     depends_on:
       - etcd
+      - dtm
+      - mysql
     restart: unless-stopped
 
   # ===== 分布式定时任务调度服务 =====
@@ -101,6 +107,7 @@ services:
       ETCD_ENDPOINTS: http://etcd:2379
     depends_on:
       - etcd
+      - mysql
       - user-rpc
       - order-rpc
       - stock-rpc

@@ -23,7 +23,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	gormx.MustMigrateCommon(db)
 
 	// 自动迁移业务表
-	if err := db.AutoMigrate(&model.Order{}); err != nil {
+	if err := db.AutoMigrate(
+		&model.Order{},
+		&model.OrderTccControl{},
+	); err != nil {
 		log.Fatalf("auto migrate order table failed: %v", err)
 	}
 

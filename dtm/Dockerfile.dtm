@@ -2,4 +2,11 @@
 # 配置通过 docker-compose 环境变量注入（STORE=MYSQL, MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD）
 FROM yedf/dtm:latest
 
+# 拷贝初始化脚本
+COPY init-dtm-db.sh /usr/local/bin/init-dtm-db.sh
+RUN chmod +x /usr/local/bin/init-dtm-db.sh
+
+# 入口：先初始化数据库并等待 MySQL 就绪，再 exec 启动 DTM 服务
+ENTRYPOINT ["/bin/bash", "-c", "/usr/local/bin/init-dtm-db.sh && exec dtm"]
+
 EXPOSE 36789 36790
