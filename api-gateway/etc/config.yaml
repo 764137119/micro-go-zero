@@ -14,6 +14,18 @@ OrderRpc:
       - 127.0.0.1:2379
     Key: order.rpc
 
+StockRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: stock.rpc
+
+CronJobRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: cronjob.rpc
+
 # DTM 协调器
 DTM: http://dtm:36789         # HTTP 地址（用于生成全局事务 ID）
 DTMEndpoint: dtm:36790        # gRPC 地址（用于提交 Saga 事务）

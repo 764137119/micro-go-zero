@@ -7,8 +7,10 @@ type Config struct {
 	Host string `yaml:"Host"`
 	Port int    `yaml:"Port"`
 
-	UserRpc  zrpc.RpcClientConf `yaml:"UserRpc"`
-	OrderRpc zrpc.RpcClientConf `yaml:"OrderRpc"`
+	UserRpc    zrpc.RpcClientConf `yaml:"UserRpc"`
+	OrderRpc   zrpc.RpcClientConf `yaml:"OrderRpc"`
+	StockRpc   zrpc.RpcClientConf `yaml:"StockRpc"`
+	CronJobRpc zrpc.RpcClientConf `yaml:"CronJobRpc"`
 
 	// DTM HTTP 地址（用于生成 gid），如 "http://dtm:36789"
 	DTM string `yaml:"DTM"`

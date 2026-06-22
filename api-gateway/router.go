@@ -15,6 +15,27 @@ func RegisterRoutes(r *gin.Engine, svcCtx *svc.ServiceContext) {
 
 	api := r.Group("/api/v1")
 	{
+		// ===== 库存接口（需认证）=====
+		stock := api.Group("/stock")
+		stock.Use(middleware.AuthMiddleware())
+		{
+			stock.POST("/batch-query", handler.BatchQueryStock(svcCtx))
+		}
+
+		// ===== 定时任务接口（需认证）=====
+		cronjob := api.Group("/cronjob")
+		cronjob.Use(middleware.AuthMiddleware())
+		{
+			cronjob.POST("/register", handler.RegisterTask(svcCtx))
+			cronjob.POST("/unregister", handler.UnregisterTask(svcCtx))
+			cronjob.POST("/list", handler.ListTasks(svcCtx))
+			cronjob.POST("/set-enabled", handler.SetTaskEnabled(svcCtx))
+			cronjob.POST("/executions", handler.ListExecutions(svcCtx))
+			cronjob.POST("/trigger", handler.TriggerOnce(svcCtx))
+			cronjob.POST("/retry", handler.RetryTask(svcCtx))
+			cronjob.POST("/stats", handler.GetTaskStats(svcCtx))
+		}
+
 		// ===== 用户接口 =====
 		user := api.Group("/user")
 		{

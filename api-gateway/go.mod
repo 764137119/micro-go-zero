@@ -4,6 +4,7 @@ go 1.26.4
 
 require (
 	common v0.0.0
+	cronjob-rpc v0.0.0-00010101000000-000000000000
 	github.com/gin-gonic/gin v1.10.0
 	github.com/zeromicro/go-zero v1.10.2
 	order-rpc v0.0.0
@@ -144,3 +145,5 @@ replace (
 )
 
 replace stock-rpc => ../rpc/stock-rpc
+
+replace cronjob-rpc => ../rpc/cronjob-rpc
