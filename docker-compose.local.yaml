@@ -114,8 +114,7 @@ services:
       dockerfile: api-gateway/Dockerfile
     ports:
       - "127.0.0.1:8888:8888"
-    environment:
-      ETCD_ENDPOINTS: http://etcd:2379
+    # etcd 地址已在 config.yaml 中配置，不再通过环境变量传递
     depends_on:
       - etcd
       - mysql

@@ -5,25 +5,25 @@ Port: 8888
 UserRpc:
   Etcd:
     Hosts:
-      - 127.0.0.1:2379
+      - etcd:2379
     Key: user.rpc
 
 OrderRpc:
   Etcd:
     Hosts:
-      - 127.0.0.1:2379
+      - etcd:2379
     Key: order.rpc
 
 StockRpc:
   Etcd:
     Hosts:
-      - 127.0.0.1:2379
+      - etcd:2379
     Key: stock.rpc
 
 CronJobRpc:
   Etcd:
     Hosts:
-      - 127.0.0.1:2379
+      - etcd:2379
     Key: cronjob.rpc
 
 # DTM 协调器

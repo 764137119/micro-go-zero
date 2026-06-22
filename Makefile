@@ -97,38 +97,33 @@ gen-cronjob:
 # 构建所有服务（先本地编译验证，再构建镜像）
 build-all: user-service order-service stock-service cronjob-service api-gateway
 
-# 先本地编译 user-rpc 并生成二进制，再基于根目录 context 构建镜像
+PROXY_ARGS = --build-arg HTTP_PROXY="http://127.0.0.1:56666" \
+             --build-arg HTTPS_PROXY="http://127.0.0.1:56666" \
+             --build-arg ALL_PROXY="socks5://127.0.0.1:56666" \
+             --build-arg NO_PROXY="localhost,127.0.0.1,.local"
+
+# 容器内多阶段构建 user-rpc 镜像（基于根目录 context）
 user-service:
-	@echo "🔨 本地编译 user-rpc..."
-	cd rpc/user-rpc && CGO_ENABLED=0 go build -ldflags="-s -w" -o user-rpc .
-	@echo "✅ 二进制构建完成，构建 user-rpc 镜像..."
-	docker build -t user-rpc:latest -f rpc/user-rpc/Dockerfile .
+	@echo "🔨 构建 user-rpc 镜像..."
+	docker build -t user-rpc:latest $(PROXY_ARGS) -f rpc/user-rpc/Dockerfile .
 
-# 先本地编译 order-rpc 并生成二进制，再基于根目录 context 构建镜像
+# 容器内多阶段构建 order-rpc 镜像（基于根目录 context）
 order-service:
-	@echo "🔨 本地编译 order-rpc..."
-	cd rpc/order-rpc && CGO_ENABLED=0 go build -ldflags="-s -w" -o order-rpc .
-	@echo "✅ 二进制构建完成，构建 order-rpc 镜像..."
-	docker build -t order-rpc:latest -f rpc/order-rpc/Dockerfile .
+	@echo "🔨 构建 order-rpc 镜像..."
+	docker build -t order-rpc:latest $(PROXY_ARGS) -f rpc/order-rpc/Dockerfile .
 
-# 先本地编译 stock-rpc 并生成二进制，再基于根目录 context 构建镜像
+# 容器内多阶段构建 stock-rpc 镜像（基于根目录 context）
 stock-service:
-	@echo "🔨 本地编译 stock-rpc..."
-	cd rpc/stock-rpc && CGO_ENABLED=0 go build -ldflags="-s -w" -o stock-rpc .
-	@echo "✅ 二进制构建完成，构建 stock-rpc 镜像..."
-	docker build -t stock-rpc:latest -f rpc/stock-rpc/Dockerfile .
+	@echo "🔨 构建 stock-rpc 镜像..."
+	docker build -t stock-rpc:latest $(PROXY_ARGS) -f rpc/stock-rpc/Dockerfile .
 
-# 先本地编译 cronjob-rpc 并生成二进制，再基于根目录 context 构建镜像
+# 容器内多阶段构建 cronjob-rpc 镜像（基于根目录 context）
 cronjob-service:
-	@echo "🔨 本地编译 cronjob-rpc..."
-	cd rpc/cronjob-rpc && CGO_ENABLED=0 go build -ldflags="-s -w" -o cronjob-rpc .
-	@echo "✅ 二进制构建完成，构建 cronjob-rpc 镜像..."
-	docker build -t cronjob-rpc:latest -f rpc/cronjob-rpc/Dockerfile .
+	@echo "🔨 构建 cronjob-rpc 镜像..."
+	docker build -t cronjob-rpc:latest $(PROXY_ARGS) -f rpc/cronjob-rpc/Dockerfile .
 
-# 先本地编译 api-gateway 并生成二进制，再基于根目录 context 构建镜像
+# 容器内多阶段构建 api-gateway 镜像（基于根目录 context）
 api-gateway:
-	@echo "🔨 本地编译 api-gateway..."
-	cd api-gateway && CGO_ENABLED=0 go build -ldflags="-s -w" -o api-gateway .
-	@echo "✅ 二进制构建完成，构建 api-gateway 镜像..."
-	docker build -t api-gateway:latest -f api-gateway/Dockerfile .
+	@echo "🔨 构建 api-gateway 镜像..."
+	docker build -t api-gateway:latest $(PROXY_ARGS) -f api-gateway/Dockerfile .
 

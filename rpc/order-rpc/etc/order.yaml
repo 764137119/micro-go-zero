@@ -2,7 +2,7 @@ Name: order.rpc
 ListenOn: 0.0.0.0:8081
 Etcd:
   Hosts:
-  - 127.0.0.1:2379
+  - etcd:2379
   Key: order.rpc
 
 # dtm 协调器地址（docker-compose 内网）

@@ -4,9 +4,14 @@ stock-service
 
 # 编译产物（go build 生成的可执行文件）
 rpc/user-rpc/user-rpc
+rpc/user-rpc/user-rpc-app
 rpc/order-rpc/order-rpc
+rpc/order-rpc/order-rpc-app
 rpc/stock-rpc/stock-rpc
+rpc/stock-rpc/stock-rpc-app
 rpc/cronjob-rpc/cronjob-rpc
+rpc/cronjob-rpc/cronjob-rpc-app
 
 # api-gateway 编译产物
 api-gateway/api-gateway
+api-gateway/api-gateway-app

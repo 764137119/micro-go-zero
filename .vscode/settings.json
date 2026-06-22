@@ -1,0 +1,9 @@
+{
+  "docker.languageserver.dockerBuildContextPath": {
+    "api-gateway/Dockerfile": ".",
+    "rpc/user-rpc/Dockerfile": ".",
+    "rpc/order-rpc/Dockerfile": ".",
+    "rpc/stock-rpc/Dockerfile": ".",
+    "rpc/cronjob-rpc/Dockerfile": "."
+  }
+}
